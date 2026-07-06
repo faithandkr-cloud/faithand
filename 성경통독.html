@@ -1,0 +1,1511 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#101d2e">
+<title>일년일독 성경통독</title>
+<style>
+:root {
+  --navy:#1b2e48; --navy-lt:#243d5e; --navy-dk:#101d2e;
+  --gold:#9a7b35; --gold-lt:#c9a84c; --gold-ltr:#e8c96a;
+  --cream:#f0ead8; --txt:#d8cdb0; --txt-dim:#8a8070;
+  --green:#4a9b6f; --green-lt:#7bd1a3;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bot:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{
+  font-family:'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',sans-serif;
+  background:var(--navy-dk);color:var(--cream);
+  height:100vh;height:100dvh;overflow:hidden;
+  display:flex;flex-direction:column;
+}
+
+/* ── 헤더 ── */
+header {
+  background: linear-gradient(135deg, var(--navy-dk), var(--navy));
+  border-bottom: 1px solid rgba(154,123,53,.4);
+  padding: 0 16px;
+  padding-top: var(--safe-top);
+  display: flex; flex-direction: column;
+  flex-shrink: 0;
+  position: sticky; top: 0; z-index: 100;
+}
+/* 1줄: ✝ 일년일독 통독  은혜가풍성한교회 */
+.hd-top {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 0 8px;
+  border-bottom: 1px solid rgba(154,123,53,.2);
+}
+.hd-left { display: flex; align-items: center; gap: 10px; }
+.hd-cross { font-size: 1.5rem; color: var(--gold-lt); }
+.hd-title { font-size: .95rem; font-weight: 700; color: var(--gold-lt); }
+.hd-sub   { font-size: .68rem; color: var(--txt-dim); margin-top: 1px; }
+.hd-right { display: none; }
+
+/* 2줄: ← 홈  |  ⏱자동  📅캘린더  OK */
+.hd-addr-bar {
+  display: flex; align-items: center;
+  padding: 5px 0 7px; gap: 5px;
+}
+#hd-home-btn {
+  display: flex; align-items: center; gap: 4px;
+  background: rgba(154,123,53,.15); border: 1px solid rgba(154,123,53,.35);
+  color: var(--gold-ltr); font-size: .72rem; font-weight: 800;
+  padding: 4px 10px; border-radius: 14px; cursor: pointer; font-family: inherit;
+  white-space: nowrap; flex-shrink: 0; transition: background .15s;
+}
+#hd-home-btn:hover { background: rgba(154,123,53,.32); }
+.hd-addr-divider {
+  width: 1px; height: 16px; background: rgba(154,123,53,.3); flex-shrink: 0; margin: 0 2px;
+}
+.hd-addr-text { display: none; }
+.hd-addr-btns { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.hd-btn {
+  background: rgba(154,123,53,.18); border: 1px solid rgba(154,123,53,.4);
+  color: var(--gold-ltr); font-size: .68rem; font-weight: 700;
+  padding: 4px 9px; border-radius: 14px; cursor: pointer; font-family: inherit;
+  transition: background .15s; white-space: nowrap;
+}
+.hd-btn:hover { background: rgba(154,123,53,.32); }
+#hd-ok-btn.done {
+  background: rgba(74,155,111,.25); border-color: rgba(74,155,111,.5); color: var(--green-lt);
+}
+.hd-ver-btns { display: none; }
+.hd-ver-btn  { display: none; }
+
+/* ── 낭독 컨트롤 바 — 날짜카드 바로 아래 ── */
+#tts-bar{
+  background:linear-gradient(160deg,var(--navy),var(--navy-lt));
+  border-bottom:1px solid rgba(154,123,53,.2);
+  padding:5px 10px;flex-shrink:0;
+  display:flex;align-items:center;gap:6px;
+}
+#tts-play-btn{
+  width:34px;height:34px;border-radius:50%;
+  background:linear-gradient(135deg,var(--gold),var(--gold-lt));
+  border:none;color:var(--navy-dk);font-size:.95rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:transform .1s,background .2s;
+}
+#tts-play-btn:active{transform:scale(.92);}
+#tts-play-btn.playing{background:linear-gradient(135deg,#c85a3a,#e07050);}
+.tts-label{font-size:.72rem;color:var(--gold-lt);font-weight:700;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tts-speed-wrap{display:flex;gap:4px;}
+.tts-speed-btn{
+  background:rgba(154,123,53,.12);border:1px solid rgba(154,123,53,.28);
+  color:var(--txt-dim);font-size:.65rem;font-weight:700;
+  padding:4px 8px;border-radius:10px;cursor:pointer;font-family:inherit;transition:all .15s;
+}
+.tts-speed-btn.active{background:rgba(154,123,53,.35);color:var(--gold-ltr);border-color:var(--gold);}
+#tts-scroll-btn{
+  background:rgba(74,155,111,.1);border:1px solid rgba(74,155,111,.28);
+  color:var(--txt-dim);font-size:.65rem;font-weight:700;
+  padding:4px 9px;border-radius:10px;cursor:pointer;font-family:inherit;
+  white-space:nowrap;transition:all .15s;
+}
+#tts-scroll-btn.on{background:rgba(74,155,111,.3);color:var(--green-lt);border-color:rgba(74,155,111,.6);}
+
+/* ── 진행 바 ── */
+#pb-wrap{
+  background:rgba(0,0,0,.3);border-bottom:1px solid rgba(154,123,53,.2);
+  padding:6px 14px;flex-shrink:0;
+  display:flex;align-items:center;gap:10px;
+}
+.pb-track{flex:1;height:5px;background:rgba(255,255,255,.08);border-radius:10px;overflow:hidden;}
+.pb-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-ltr));border-radius:10px;transition:width .4s;}
+.pb-text{font-size:.68rem;color:var(--gold-lt);font-weight:700;white-space:nowrap;}
+
+/* ── 캘린더·진행현황 팝업 오버레이 ── */
+#cal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:300;
+  align-items:flex-end;justify-content:center;
+}
+#cal-overlay.open{display:flex;}
+#cal-popup{
+  background:linear-gradient(160deg,var(--navy-dk),var(--navy));
+  border:1px solid rgba(154,123,53,.5);border-radius:22px 22px 0 0;
+  padding:18px 16px calc(18px + var(--safe-bot));
+  width:100%;max-width:520px;
+  max-height:88vh;overflow-y:auto;
+}
+.cal-popup-handle{
+  width:38px;height:4px;background:rgba(255,255,255,.2);
+  border-radius:2px;margin:0 auto 16px;
+}
+.cal-popup-title{
+  font-size:.95rem;font-weight:900;color:var(--gold-ltr);
+  text-align:center;margin-bottom:16px;
+  text-shadow:0 0 10px rgba(232,201,106,.3);
+}
+.cal-popup-close{
+  position:absolute;right:16px;top:16px;
+  width:28px;height:28px;border-radius:50%;
+  background:rgba(255,255,255,.1);border:none;
+  color:var(--txt-dim);font-size:.9rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+
+/* ── 콘텐츠 영역 — 여백 최소화 ── */
+#content-area{flex:1;overflow-y:auto;padding:6px 0 0;}
+
+/* ── 날짜+이동+버전 통합 띠 ── */
+#today-card{
+  background:linear-gradient(90deg,var(--navy),var(--navy-lt));
+  border-bottom:1px solid rgba(154,123,53,.25);
+  padding:7px 10px;margin-bottom:0;
+  display:flex;align-items:center;gap:5px;flex-wrap:wrap;
+}
+.tc-center{
+  flex:1;text-align:center;min-width:0;
+}
+.tc-date-str{
+  font-size:.72rem;font-weight:700;color:var(--gold-lt);
+  margin-bottom:1px;
+}
+.tc-range-text{
+  font-size:.9rem;font-weight:900;color:var(--cream);
+}
+#today-card .nav-btn{
+  flex-shrink:0;width:30px;height:30px;padding:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.8rem;
+}
+/* 날짜카드 안 버전 버튼 */
+#tc-ver-btns{display:flex;gap:3px;flex-shrink:0;}
+.tc-ver-btn{
+  padding:3px 7px;border-radius:7px;font-size:.6rem;font-weight:700;
+  border:1px solid rgba(154,123,53,.3);background:transparent;
+  color:var(--gold);cursor:pointer;font-family:inherit;transition:all .15s;
+}
+.tc-ver-btn.active{
+  background:linear-gradient(90deg,var(--gold),var(--gold-lt));
+  color:var(--navy-dk);border-color:var(--gold-lt);
+}
+
+/* ── 날짜+이동 통합 띠 ── */
+#today-card{
+  background:linear-gradient(90deg,var(--navy),var(--navy-lt));
+  border:1px solid rgba(154,123,53,.35);border-radius:12px;
+  padding:10px 10px;margin-bottom:8px;
+  display:flex;align-items:center;gap:8px;
+}
+.tc-center{
+  flex:1;text-align:center;
+}
+.tc-date-str{
+  font-size:.82rem;font-weight:700;color:var(--gold-ltr);
+  margin-bottom:2px;
+}
+.tc-range-text{
+  font-size:.95rem;font-weight:900;color:var(--cream);
+}
+#today-card .nav-btn{
+  flex-shrink:0;width:36px;height:36px;padding:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.9rem;
+}
+#check-btn{
+  display:none; /* 헤더 OK 버튼으로 대체 */
+}
+
+/* 본문 뷰어 — 여백 제거, 꽉채움 */
+#verse-viewer{
+  background:linear-gradient(160deg,var(--navy),var(--navy-lt));
+  border:none;border-radius:0;
+  padding:8px 10px 24px;margin-bottom:0;
+}
+.vv-header{
+  display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;
+}
+.vv-title{font-size:.88rem;font-weight:800;color:var(--gold-lt);}
+.vv-ver-btns{display:flex;gap:4px;}
+.ver-btn{
+  padding:4px 8px;border-radius:8px;font-size:.65rem;font-weight:700;
+  border:1px solid rgba(154,123,53,.3);background:transparent;
+  color:var(--txt-dim);cursor:pointer;font-family:inherit;transition:all .15s;
+}
+.ver-btn.active{background:rgba(154,123,53,.3);color:var(--gold-ltr);border-color:var(--gold);}
+
+#verse-loading{
+  text-align:center;padding:30px;color:var(--txt-dim);font-size:.82rem;
+}
+#verse-content{line-height:0;}
+
+/* book-title 은 숨김 — ch-title이 책+장을 한 줄로 표시 */
+.book-title{ display:none; }
+
+/* 장 구분: 📖 시편 71장 — 독립 칸, 금색띠 없음 */
+.ch-title{
+  display:flex;align-items:center;gap:6px;
+  font-size:.88rem;font-weight:900;
+  color:var(--gold-ltr);
+  padding:14px 0 5px;
+  margin-top:6px;
+  border-top:1px solid rgba(154,123,53,.25);
+  letter-spacing:.3px;
+  text-shadow:0 0 10px rgba(232,201,106,.25);
+  line-height:1;
+}
+.ch-title:first-child{ border-top:none; margin-top:0; }
+.verse-row{
+  display:flex;gap:5px;padding:2px 0;
+  border-bottom:1px solid rgba(255,255,255,.03);
+  scroll-margin-top:8px;
+}
+.ch-title.tts-active{
+  background:rgba(154,123,53,.25);
+  border-left:3px solid var(--gold-lt);
+  color:var(--gold-ltr);
+}
+.verse-row.tts-active{
+  background:rgba(201,168,76,.1);
+  border-radius:6px;
+  border-bottom-color:transparent;
+}
+.verse-row.tts-active .v-text{color:var(--cream);}
+/* 절 번호 */
+.v-num{
+  font-size:.75rem;color:var(--gold-ltr);font-weight:800;
+  min-width:22px;padding-top:2px;flex-shrink:0;
+  text-align:right;
+  margin-left:3px;
+  margin-right:0;
+  line-height:1.8;
+  vertical-align:unset !important;
+  font-size:.75rem !important;
+  position:static !important;
+}
+.v-text{font-size:.88rem;color:var(--txt);line-height:1.8;word-break:keep-all;}
+
+.nav-btn{
+  background:linear-gradient(160deg,var(--navy),var(--navy-lt));
+  border:1px solid rgba(154,123,53,.3);border-radius:10px;
+  color:var(--txt-dim);font-size:.8rem;font-weight:700;
+  cursor:pointer;font-family:inherit;transition:border-color .15s,color .15s;
+  display:flex;align-items:center;justify-content:center;
+}
+.nav-btn:hover{border-color:var(--gold);color:var(--gold-ltr);}
+.nav-btn:disabled{opacity:.3;cursor:default;}
+.nav-lock-note{
+  text-align:center;font-size:.66rem;color:var(--txt-dim);
+  margin:-4px 0 10px;
+}
+
+/* ── 캘린더 패널 ── */
+#cal-card{
+  background:linear-gradient(160deg,var(--navy),var(--navy-lt));
+  border:1px solid rgba(154,123,53,.3);border-radius:16px;
+  padding:16px;margin-bottom:12px;
+}
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.cal-month-label{font-size:.92rem;font-weight:800;color:var(--gold-lt);}
+.cal-nav{display:flex;gap:6px;}
+.cal-nav button{
+  width:30px;height:30px;background:rgba(154,123,53,.15);
+  border:1px solid rgba(154,123,53,.3);border-radius:8px;
+  color:var(--txt-dim);font-size:.8rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+.cal-nav button:hover{background:rgba(154,123,53,.3);color:var(--gold-ltr);}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+.cal-day-hd{text-align:center;font-size:.6rem;color:var(--txt-dim);font-weight:700;padding:3px 0;}
+.cal-cell{
+  aspect-ratio:1;display:flex;align-items:center;justify-content:center;
+  border-radius:8px;font-size:.72rem;color:var(--txt-dim);
+  cursor:pointer;transition:background .12s;position:relative;
+}
+.cal-cell:hover{background:rgba(154,123,53,.2);}
+.cal-cell.is-today{background:rgba(154,123,53,.25);color:var(--gold-ltr);font-weight:800;border:1px solid rgba(154,123,53,.5);}
+.cal-cell.selected{background:linear-gradient(135deg,var(--gold),var(--gold-lt));color:var(--navy-dk);font-weight:800;}
+.cal-cell.is-done::after{
+  content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);
+  width:4px;height:4px;border-radius:50%;background:var(--green-lt);
+}
+.cal-cell.empty{cursor:default;}
+
+.cal-range-box{
+  background:rgba(0,0,0,.2);border:1px solid rgba(154,123,53,.2);
+  border-radius:10px;padding:10px 14px;margin-top:10px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+}
+.crb-date{font-size:.72rem;color:var(--txt-dim);}
+.crb-range{font-size:.9rem;font-weight:800;color:var(--cream);}
+
+/* ── 통계 패널 ── */
+.stat-card{
+  background:linear-gradient(160deg,var(--navy),var(--navy-lt));
+  border:1px solid rgba(154,123,53,.25);border-radius:14px;
+  padding:16px;margin-bottom:10px;
+}
+.stat-row{display:flex;align-items:center;gap:14px;}
+.stat-icon{font-size:2rem;}
+.stat-info{}
+.stat-num{font-size:1.6rem;font-weight:900;color:var(--gold-ltr);}
+.stat-label{font-size:.68rem;color:var(--txt-dim);margin-top:2px;}
+.stat-right{margin-left:auto;text-align:right;}
+.stat-sub-num{font-size:1.1rem;font-weight:800;color:var(--cream);}
+.stat-sub-label{font-size:.62rem;color:var(--txt-dim);}
+
+.month-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;}
+.ms-item{
+  background:rgba(0,0,0,.2);border:1px solid rgba(154,123,53,.15);
+  border-radius:10px;padding:10px 8px;text-align:center;
+}
+.ms-month{font-size:.65rem;color:var(--txt-dim);margin-bottom:4px;}
+.ms-bar-wrap{height:40px;display:flex;align-items:flex-end;justify-content:center;margin-bottom:4px;}
+.ms-bar{width:16px;background:linear-gradient(180deg,var(--gold-ltr),var(--gold));border-radius:3px 3px 0 0;min-height:2px;}
+.ms-pct{font-size:.65rem;color:var(--gold-lt);font-weight:700;}
+
+/* ── 설정 모달 ── */
+#modal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:200;
+  align-items:flex-end;justify-content:center;
+}
+#modal-overlay.open{display:flex;}
+#modal-box{
+  background:var(--navy);border:1px solid rgba(154,123,53,.45);
+  border-radius:22px 22px 0 0;
+  padding:22px 18px calc(22px + var(--safe-bot));
+  width:100%;max-width:500px;
+}
+#modal-box h2{font-size:.92rem;color:var(--gold-ltr);margin-bottom:16px;text-align:center;}
+.s-item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:13px 0;border-bottom:1px solid rgba(255,255,255,.06);
+}
+.s-item:last-of-type{border-bottom:none;}
+.s-label{font-size:.83rem;color:var(--cream);font-weight:600;}
+.s-desc{font-size:.66rem;color:var(--txt-dim);margin-top:2px;}
+.s-section-title{
+  font-size:.7rem;font-weight:800;color:var(--gold-lt);
+  letter-spacing:.4px;padding:14px 0 6px;
+  border-top:1px solid rgba(154,123,53,.2);margin-top:4px;
+}
+.s-file-row{margin-bottom:10px;}
+.s-file-label{font-size:.72rem;color:var(--txt-dim);margin-bottom:4px;display:flex;align-items:center;justify-content:space-between;}
+.s-file-badge{
+  font-size:.6rem;font-weight:700;padding:2px 7px;border-radius:8px;
+  background:rgba(74,155,111,.18);color:var(--green-lt);border:1px solid rgba(74,155,111,.3);
+}
+.s-file-badge.unset{background:rgba(154,123,53,.15);color:var(--txt-dim);border-color:rgba(154,123,53,.25);}
+.s-file-input-row{display:flex;gap:6px;}
+.s-file-input{
+  flex:1;background:var(--navy-dk);border:1px solid rgba(154,123,53,.35);
+  border-radius:8px;color:var(--cream);font-size:.8rem;
+  padding:8px 10px;font-family:inherit;outline:none;
+}
+.s-file-input:focus{border-color:var(--gold-lt);}
+.s-file-clear{
+  padding:0 10px;background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.1);border-radius:8px;
+  color:var(--txt-dim);font-size:.75rem;cursor:pointer;font-family:inherit;
+  white-space:nowrap;
+}
+.toggle-sw{position:relative;width:46px;height:25px;flex-shrink:0;}
+.toggle-sw input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:rgba(255,255,255,.15);border-radius:13px;cursor:pointer;transition:background .2s;}
+.toggle-slider::before{content:'';position:absolute;width:19px;height:19px;left:3px;top:3px;background:#fff;border-radius:50%;transition:transform .2s;}
+.toggle-sw input:checked + .toggle-slider{background:var(--green);}
+.toggle-sw input:checked + .toggle-slider::before{transform:translateX(21px);}
+.modal-btns{display:flex;gap:10px;margin-top:16px;}
+.s-upload-btn{padding:5px 10px;background:rgba(154,123,53,.2);border:1px solid rgba(154,123,53,.5);border-radius:6px;color:var(--gold-ltr);font-size:.72rem;cursor:pointer;white-space:nowrap;transition:background .15s;}
+.s-upload-btn:hover{background:rgba(154,123,53,.4);}
+.s-del-btn{padding:5px 10px;background:transparent;border:1px solid rgba(255,80,80,.3);border-radius:6px;color:#ff8080;font-size:.72rem;cursor:pointer;transition:background .15s;}
+.s-del-btn:hover{background:rgba(255,80,80,.15);}
+.s-file-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(154,123,53,.1);}
+.s-file-label{flex:1;display:flex;align-items:center;gap:8px;min-width:0;}
+.modal-btns button{flex:1;padding:12px;border-radius:10px;border:none;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit;}
+#modal-close{background:linear-gradient(90deg,var(--gold),var(--gold-lt));color:var(--navy-dk);}
+#reset-btn{background:rgba(220,60,60,.2);color:#f87171;border:1px solid rgba(220,60,60,.3)!important;}
+</style>
+</head>
+<body>
+
+<!-- 헤더 -->
+<header>
+  <!-- 1줄: ✝ 일년일독 통독  은혜가풍성한교회 -->
+  <div class="hd-top">
+    <div class="hd-left">
+      <span class="hd-cross">✝</span>
+      <div>
+        <div class="hd-title">일년일독 통독</div>
+        <div class="hd-sub">은혜가풍성한교회</div>
+      </div>
+    </div>
+  </div>
+  <!-- 2줄: ← 홈 | ⏱자동 📅캘린더 OK -->
+  <div class="hd-addr-bar">
+    <button id="hd-home-btn" onclick="goHome()">← 홈</button>
+    <div class="hd-addr-divider"></div>
+    <div class="hd-addr-btns">
+      <button class="hd-btn" id="mode-btn" onclick="toggleMode()">⏱ 자동</button>
+      <button class="hd-btn" id="hd-cal-btn" onclick="toggleExtra()">📅 캘린더</button>
+      <button class="hd-btn" id="hd-ok-btn" onclick="toggleCheck()">OK</button>
+      <button class="hd-btn" onclick="openModal()" title="설정">⚙️</button>
+    </div>
+  </div>
+</header>
+
+<!-- 진행 바 -->
+<div id="pb-wrap">
+  <div class="pb-track"><div class="pb-fill" id="pb-fill" style="width:0%"></div></div>
+  <span class="pb-text" id="pb-text">0 / 365</span>
+</div>
+
+<!-- 콘텐츠 -->
+<div id="content-area">
+  <div id="panel-read">
+
+    <!-- 날짜 + 이동 + 버전 통합 띠 -->
+    <div id="today-card">
+      <button class="nav-btn" id="prev-btn" onclick="navigate(-1)">◀</button>
+      <div class="tc-center">
+        <div class="tc-date-str" id="tc-date-str">—</div>
+        <div class="tc-range-text" id="tc-range">—</div>
+      </div>
+      <button class="nav-btn" id="next-btn" onclick="navigate(1)">▶</button>
+      <div class="hd-addr-divider"></div>
+      <div id="tc-ver-btns">
+        <button class="tc-ver-btn active" onclick="setVersion('개역개정')">개역개정</button>
+        <button class="tc-ver-btn" onclick="setVersion('우리말성경')">우리말</button>
+        <button class="tc-ver-btn" onclick="setVersion('niv')">NIV</button>
+      </div>
+    </div>
+
+    <!-- 낭독 컨트롤 바 -->
+    <div id="tts-bar">
+      <button id="tts-play-btn" onclick="ttsToggle()" title="낭독 시작/정지">▶</button>
+      <span class="tts-label" id="tts-label">성경 낭독</span>
+      <div class="tts-speed-wrap">
+        <button class="tts-speed-btn" data-rate="0.8" onclick="ttsSetRate(0.8)">느리게</button>
+        <button class="tts-speed-btn active" data-rate="1" onclick="ttsSetRate(1)">보통</button>
+        <button class="tts-speed-btn" data-rate="1.3" onclick="ttsSetRate(1.3)">빠르게</button>
+      </div>
+      <button id="tts-scroll-btn" class="on" onclick="ttsToggleScroll()">🔃 자동스크롤</button>
+    </div>
+
+    <!-- 읽었습니다 버튼 (숨김) -->
+    <button id="check-btn" onclick="toggleCheck()">
+      <span id="check-icon">○</span>
+      <span id="check-label">읽었습니다</span>
+    </button>
+
+    <div class="nav-lock-note" id="nav-lock-note" style="display:none;">🔒 자동 모드</div>
+
+    <!-- 성경 본문 뷰어 -->
+    <div id="verse-viewer">
+      <div id="verse-loading">📖 본문을 불러오는 중...</div>
+      <div id="verse-content"></div>
+    </div>
+  </div>
+</div><!-- /content-area -->
+
+<!-- ── 캘린더·진행현황 팝업 ── -->
+<div id="cal-overlay" onclick="calOverlayClick(event)">
+  <div id="cal-popup" style="position:relative;">
+    <div class="cal-popup-handle"></div>
+    <button class="cal-popup-close" onclick="closeCalPopup()">✕</button>
+    <div class="cal-popup-title">📅 캘린더 · 진행현황</div>
+
+    <div id="cal-card">
+      <div class="cal-header">
+        <div class="cal-month-label" id="cal-month-label">2025년 1월</div>
+        <div class="cal-nav">
+          <button onclick="calNav(-1)">◀</button>
+          <button onclick="calNav(1)">▶</button>
+        </div>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div class="cal-range-box">
+        <div>
+          <div class="crb-date" id="crb-date">—</div>
+          <div class="crb-range" id="crb-range">날짜를 선택하세요</div>
+        </div>
+        <button class="hd-btn" id="cal-move-btn" onclick="goSelectedDay()">이동 →</button>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-row">
+        <div class="stat-icon">🔥</div>
+        <div class="stat-info">
+          <div class="stat-num" id="streak-num">0</div>
+          <div class="stat-label">연속 읽은 날</div>
+        </div>
+        <div class="stat-right">
+          <div class="stat-sub-num" id="total-num">0 / 365</div>
+          <div class="stat-sub-label">총 읽은 날</div>
+        </div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label" style="margin-bottom:10px;color:var(--gold-lt);font-weight:700;">📅 월별 달성률</div>
+      <div class="month-stats" id="month-stats"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 설정 모달 -->
+<div id="modal-overlay" onclick="overlayClick(event)">
+  <div id="modal-box">
+    <h2>⚙️ 설정</h2>
+    <div class="s-item">
+      <div>
+        <div class="s-label">자동 모드</div>
+        <div class="s-desc">오늘 날짜 분량을 자동 표시</div>
+      </div>
+      <label class="toggle-sw">
+        <input type="checkbox" id="auto-chk" onchange="onAutoChange()">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <!-- 성경 본문 데이터 -->
+    <div class="s-section-title">📂 성경 본문 데이터</div>
+    <div class="s-desc" style="margin-bottom:12px;line-height:1.6;">JSON 파일을 직접 등록하세요.<br>등록 후 본문이 자동으로 표시됩니다.</div>
+
+    <div class="s-file-row">
+      <div class="s-file-label">
+        <span>📗 개역개정</span>
+        <span class="s-file-badge unset" id="bible-status-개역개정">미등록</span>
+      </div>
+      <label class="s-upload-btn">
+        파일 선택
+        <input type="file" accept=".json" style="display:none" onchange="uploadBible(this,'개역개정')">
+      </label>
+      <button class="s-del-btn" onclick="deleteBible('개역개정')">삭제</button>
+    </div>
+
+    <div class="s-file-row">
+      <div class="s-file-label">
+        <span>📘 우리말성경</span>
+        <span class="s-file-badge unset" id="bible-status-우리말성경">미등록</span>
+      </div>
+      <label class="s-upload-btn">
+        파일 선택
+        <input type="file" accept=".json" style="display:none" onchange="uploadBible(this,'우리말성경')">
+      </label>
+      <button class="s-del-btn" onclick="deleteBible('우리말성경')">삭제</button>
+    </div>
+
+    <div class="s-file-row">
+      <div class="s-file-label">
+        <span>📙 NIV</span>
+        <span class="s-file-badge unset" id="bible-status-NIV">미등록</span>
+      </div>
+      <label class="s-upload-btn">
+        파일 선택
+        <input type="file" accept=".json" style="display:none" onchange="uploadBible(this,'NIV')">
+      </label>
+      <button class="s-del-btn" onclick="deleteBible('NIV')">삭제</button>
+    </div>
+
+    <!-- 낭독 음원 폴더 -->
+    <div class="s-section-title">🎧 낭독 mp3 폴더</div>
+    <div class="s-desc" style="margin-bottom:12px;line-height:1.6;">성경낭송_PRS 폴더를 지정하면<br>낭독 시 자동으로 mp3를 찾아 재생합니다.</div>
+    <div class="s-file-row">
+      <div class="s-file-label">
+        <span>📁 음원 폴더</span>
+        <span class="s-file-badge unset" id="audio-folder-status">미설정</span>
+      </div>
+      <label class="s-upload-btn" for="audio-folder-input" style="cursor:pointer;">폴더 선택</label>
+      <input type="file" id="audio-folder-input" webkitdirectory multiple style="display:none" onchange="pickAudioFolder(event)">
+      <button class="s-del-btn" onclick="clearAudioFolder()">해제</button>
+    </div>
+
+    <!-- 구분선 -->
+    <div class="s-section-title" style="margin-top:0;">⚠️ 데이터 관리</div>
+    <div class="s-item" style="padding-top:8px;">
+      <div>
+        <div class="s-label">읽음 기록 초기화</div>
+        <div class="s-desc">모든 체크 기록을 삭제합니다</div>
+      </div>
+      <button id="reset-btn" onclick="resetAll()" style="padding:6px 12px;border-radius:8px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:inherit;">초기화</button>
+    </div>
+    <div class="modal-btns">
+      <button onclick="closeModal()" style="flex:1;padding:12px;border-radius:10px;border:none;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit;background:rgba(255,255,255,.08);color:var(--txt-dim);">닫기</button>
+      <button id="modal-close" onclick="refreshBibleDataStatus(true)">새로고침</button>
+    </div>
+  </div>
+</div>
+
+<script src="bible-db.js"></script>
+<script>
+/* ══════════════════════════════
+   1년 통독 스케줄
+══════════════════════════════ */
+const SCHEDULE = {
+  "1-1":"창 1-3","1-2":"창 4-6","1-3":"창 7-9","1-4":"창 10-13","1-5":"창 14-17",
+  "1-6":"창 18-20","1-7":"창 21-23","1-8":"창 24-26","1-9":"창 27-30","1-10":"창 31-33",
+  "1-11":"창 34-36","1-12":"창 37-40","1-13":"창 41-45","1-14":"창 46-48","1-15":"창 49-50",
+  "1-16":"출 1-4","1-17":"출 5-7","1-18":"출 8-11","1-19":"출 12-14","1-20":"출 15-17",
+  "1-21":"출 18-20","1-22":"출 21-23","1-23":"출 24-26","1-24":"출 27-29","1-25":"출 30-32",
+  "1-26":"출 33-35","1-27":"출 36-38","1-28":"출 39-40","1-29":"레 1-4","1-30":"레 5-7","1-31":"레 8-10",
+  "2-1":"레 11-14","2-2":"레 15-17","2-3":"레 18-20","2-4":"레 21-24","2-5":"레 25-27",
+  "2-6":"민 1-4","2-7":"민 5-7","2-8":"민 8-10","2-9":"민 11-14","2-10":"민 15-17",
+  "2-11":"민 18-20","2-12":"민 21-23","2-13":"민 24-27","2-14":"민 28-30","2-15":"민 31-33",
+  "2-16":"민 34-36","2-17":"신 1-4","2-18":"신 5-7","2-19":"신 8-10","2-20":"신 11-14",
+  "2-21":"신 15-17","2-22":"신 18-20","2-23":"신 21-23","2-24":"신 24-27","2-25":"신 28-30",
+  "2-26":"신 31-34","2-27":"수 1-4","2-28":"수 5-7",
+  "3-1":"수 8-10","3-2":"수 11-13","3-3":"수 14-17","3-4":"수 18-21","3-5":"수 22-24",
+  "3-6":"삿 1-3","3-7":"삿 4-8","3-8":"삿 9-10","3-9":"삿 11-12","3-10":"삿 13-16",
+  "3-11":"삿 17-18","3-12":"삿 19-21","3-13":"룻 1-4","3-14":"삼상 1-3","3-15":"삼상 4-7",
+  "3-16":"삼상 8-10","3-17":"삼상 11-13","3-18":"삼상 14-16","3-19":"삼상 17-20","3-20":"삼상 21-23",
+  "3-21":"삼상 24-26","3-22":"삼상 27-29","3-23":"삼상 30-31","3-24":"삼하 1-3","3-25":"삼하 4-6",
+  "3-26":"삼하 7-9","3-27":"삼하 10-12","3-28":"삼하 13-15","3-29":"삼하 16-19","3-30":"삼하 20-22","3-31":"삼하 23-24",
+  "4-1":"왕상 1-3","4-2":"왕상 4-7","4-3":"왕상 8-10","4-4":"왕상 11-14","4-5":"왕상 15-17",
+  "4-6":"왕상 18-20","4-7":"왕상 21-22","4-8":"왕하 1-4","4-9":"왕하 5-7","4-10":"왕하 8-10",
+  "4-11":"왕하 11-13","4-12":"왕하 14-17","4-13":"왕하 18-20","4-14":"왕하 21-25","4-15":"대상 1-4",
+  "4-16":"대상 5-8","4-17":"대상 9-12","4-18":"대상 13-16","4-19":"대상 17-19","4-20":"대상 20-22",
+  "4-21":"대상 23-25","4-22":"대상 26-29","4-23":"대하 1-3","4-24":"대하 4-7","4-25":"대하 8-9",
+  "4-26":"대하 10-12","4-27":"대하 13-15","4-28":"대하 16-18","4-29":"대하 19-21","4-30":"대하 22-24",
+  "5-1":"대하 25-28","5-2":"대하 29-32","5-3":"대하 33-36","5-4":"스 1-4","5-5":"스 5-7",
+  "5-6":"스 8-10","5-7":"느 1-2","5-8":"느 3-5","5-9":"느 6-9","5-10":"느 10-13",
+  "5-11":"에 1-3","5-12":"에 4-7","5-13":"에 8-10","5-14":"욥 1-3","5-15":"욥 4-7",
+  "5-16":"욥 8-10","5-17":"욥 11-14","5-18":"욥 15-17","5-19":"욥 18-20","5-20":"욥 21-24",
+  "5-21":"욥 25-28","5-22":"욥 29-31","5-23":"욥 32-34","5-24":"욥 35-37","5-25":"욥 38-42",
+  "5-26":"시 1-3","5-27":"시 4-6","5-28":"시 7-9","5-29":"시 10-12","5-30":"시 13-15","5-31":"시 16-18",
+  "6-1":"시 19-21","6-2":"시 22-24","6-3":"시 25-27","6-4":"시 28-30","6-5":"시 31-33",
+  "6-6":"시 34-36","6-7":"시 37-39","6-8":"시 40-42","6-9":"시 43-46","6-10":"시 47-50",
+  "6-11":"시 51-54","6-12":"시 55-57","6-13":"시 58-61","6-14":"시 62-64","6-15":"시 65-67",
+  "6-16":"시 68-70","6-17":"시 71-73","6-18":"시 74-76","6-19":"시 77-79","6-20":"시 80-82",
+  "6-21":"시 83-85","6-22":"시 86-88","6-23":"시 89-91","6-24":"시 92-94","6-25":"시 95-97",
+  "6-26":"시 98-100","6-27":"시 101-103","6-28":"시 104-106","6-29":"시 107-110","6-30":"시 111-114",
+  "7-1":"시 115-118","7-2":"시 119","7-3":"시 120-123","7-4":"시 124-127","7-5":"시 128-131",
+  "7-6":"시 132-135","7-7":"시 136-138","7-8":"시 139-141","7-9":"시 142-144","7-10":"시 145-147",
+  "7-11":"시 148-150","7-12":"잠 1-3","7-13":"잠 4-6","7-14":"잠 7-9","7-15":"잠 10-12",
+  "7-16":"잠 13-15","7-17":"잠 16-18","7-18":"잠 19-21","7-19":"잠 22-24","7-20":"잠 25-27",
+  "7-21":"잠 28-31","7-22":"전 1-3","7-23":"전 4-6","7-24":"전 7-9","7-25":"전 10-12",
+  "7-26":"아 1-4","7-27":"아 5-8","7-28":"사 1-3","7-29":"사 4-6","7-30":"사 7-9","7-31":"사 10-12",
+  "8-1":"사 13-16","8-2":"사 17-20","8-3":"사 21-23","8-4":"사 24-26","8-5":"사 27-29",
+  "8-6":"사 30-32","8-7":"사 33-35","8-8":"사 36-39","8-9":"사 40-43","8-10":"사 44-46",
+  "8-11":"사 47-49","8-12":"사 50-52","8-13":"사 53-55","8-14":"사 56-58","8-15":"사 59-62",
+  "8-16":"사 63-66","8-17":"렘 1-3","8-18":"렘 4-6","8-19":"렘 7-9","8-20":"렘 10-12",
+  "8-21":"렘 13-15","8-22":"렘 16-17","8-23":"렘 18-20","8-24":"렘 21-23","8-25":"렘 24-26",
+  "8-26":"렘 27-29","8-27":"렘 30-31","8-28":"렘 32-34","8-29":"렘 35-37","8-30":"렘 38-41","8-31":"렘 42-44",
+  "9-1":"렘 45-48","9-2":"렘 49-52","9-3":"애 1-5","9-4":"겔 1-3","9-5":"겔 4-6",
+  "9-6":"겔 7-9","9-7":"겔 10-12","9-8":"겔 13-15","9-9":"겔 16-18","9-10":"겔 19-21",
+  "9-11":"겔 22-24","9-12":"겔 25-28","9-13":"겔 29-32","9-14":"겔 33-36","9-15":"겔 37-39",
+  "9-16":"겔 40-43","9-17":"겔 44-48","9-18":"단 1-3","9-19":"단 4-6","9-20":"단 7-9",
+  "9-21":"단 10-12","9-22":"호 1-3","9-23":"호 4-7","9-24":"호 8-10","9-25":"호 11-14",
+  "9-26":"욜 1-3","9-27":"암 1-3","9-28":"암 4-6","9-29":"암 7-9","9-30":"옵 1",
+  "10-1":"욘 1-4","10-2":"미 1-4","10-3":"미 5-7","10-4":"나 1-3","10-5":"합 1-3",
+  "10-6":"습 1-3","10-7":"학 1-2","10-8":"슥 1-4","10-9":"슥 5-8","10-10":"슥 9-11",
+  "10-11":"슥 12-14","10-12":"말 1-4","10-13":"마 1-4","10-14":"마 5-7","10-15":"마 8-10",
+  "10-16":"마 11-13","10-17":"마 14-16","10-18":"마 17-20","10-19":"마 21-23","10-20":"마 24-26",
+  "10-21":"마 27-28","10-22":"막 1-4","10-23":"막 5-8","10-24":"막 9-12","10-25":"막 13-16",
+  "10-26":"눅 1-4","10-27":"눅 5-8","10-28":"눅 9-12","10-29":"눅 13-16","10-30":"눅 17-20","10-31":"눅 21-24",
+  "11-1":"요 1-3","11-2":"요 4-6","11-3":"요 7-9","11-4":"요 10-13","11-5":"요 14-16",
+  "11-6":"요 17-21","11-7":"행 1-4","11-8":"행 5-7","11-9":"행 8-9","11-10":"행 10-12",
+  "11-11":"행 13-16","11-12":"행 17-20","11-13":"행 21-23","11-14":"행 24-26","11-15":"행 27-28",
+  "11-16":"롬 1-3","11-17":"롬 4-5","11-18":"롬 6-8","11-19":"롬 9-11","11-20":"롬 12-13",
+  "11-21":"롬 14-16","11-22":"고전 1-3","11-23":"고전 4-6","11-24":"고전 7-9","11-25":"고전 10-12",
+  "11-26":"고전 13-16","11-27":"고후 1-3","11-28":"고후 4-6","11-29":"고후 7-9","11-30":"고후 10-13",
+  "12-1":"갈 1-3","12-2":"갈 4-6","12-3":"엡 1-3","12-4":"엡 4-6","12-5":"빌 1-4",
+  "12-6":"골 1-4","12-7":"살전 1-5","12-8":"살후 1-3","12-9":"딤전 1-3","12-10":"딤전 4-6",
+  "12-11":"딤후 1-4","12-12":"딛 1-3, 몬 1","12-13":"히 1-2","12-14":"히 3-4","12-15":"히 5-7",
+  "12-16":"히 8-10","12-17":"히 11","12-18":"히 12-13","12-19":"약 1-5","12-20":"벧전 1-5",
+  "12-21":"벧후 1-3","12-22":"요일 1-5","12-23":"요이, 요삼, 유","12-24":"계 1-3","12-25":"계 4-5",
+  "12-26":"계 6-9","12-27":"계 10-13","12-28":"계 14-16","12-29":"계 17-18","12-30":"계 19-20","12-31":"계 21-22"
+};
+
+/* 책 한글 이름 */
+const BOOK_KO = {
+  "창":"창세기","출":"출애굽기","레":"레위기","민":"민수기","신":"신명기",
+  "수":"여호수아","삿":"사사기","룻":"룻기","삼상":"사무엘상","삼하":"사무엘하",
+  "왕상":"열왕기상","왕하":"열왕기하","대상":"역대상","대하":"역대하",
+  "스":"에스라","느":"느헤미야","에":"에스더","욥":"욥기","시":"시편","잠":"잠언",
+  "전":"전도서","아":"아가","사":"이사야","렘":"예레미야",
+  "애":"예레미야애가","겔":"에스겔","단":"다니엘","호":"호세아","욜":"요엘",
+  "암":"아모스","옵":"오바댜","욘":"요나","미":"미가","나":"나훔","합":"하박국",
+  "습":"스바냐","학":"학개","슥":"스가랴","말":"말라기",
+  "마":"마태복음","막":"마가복음","눅":"누가복음","요":"요한복음","행":"사도행전","롬":"로마서",
+  "고전":"고린도전서","고후":"고린도후서","갈":"갈라디아서","엡":"에베소서",
+  "빌":"빌립보서","골":"골로새서","살전":"데살로니가전서","살후":"데살로니가후서",
+  "딤전":"디모데전서","딤후":"디모데후서","딛":"디도서","몬":"빌레몬서","히":"히브리서",
+  "약":"야고보서","벧전":"베드로전서","벧후":"베드로후서","요일":"요한1서","요이":"요한2서",
+  "요삼":"요한3서","유":"유다서","계":"요한계시록"
+};
+
+const MONTHS_EN = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
+const MONTHS_KO = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+const DAYS_KO   = ['일','월','화','수','목','금','토'];
+
+/* ── 상태 ── */
+let autoMode = true;
+let viewMonth = 0, viewDay = 1;
+let calViewMonth = 0, calSelDay = 0;
+let checkedDays = {};
+let curVersion = '개역개정';
+let bibleCache = {}; // 버전별 캐시
+
+/* ── 저장/로드 ── */
+function load() {
+  try {
+    const s = localStorage.getItem('bibread_2025');
+    if (s) checkedDays = JSON.parse(s);
+    const m = localStorage.getItem('bibread_mode');
+    if (m !== null) autoMode = m === '1';
+    const v = localStorage.getItem('bibread_ver');
+    if (v) curVersion = v;
+  } catch(e){}
+}
+function save() {
+  localStorage.setItem('bibread_2025', JSON.stringify(checkedDays));
+  localStorage.setItem('bibread_mode', autoMode ? '1' : '0');
+  localStorage.setItem('bibread_ver', curVersion);
+}
+
+/* ── 캘린더·진행현황 팝업 ── */
+function toggleExtra() {
+  const overlay = document.getElementById('cal-overlay');
+  if (overlay.classList.contains('open')) {
+    closeCalPopup();
+  } else {
+    overlay.classList.add('open');
+    renderCal(); renderStat();
+  }
+}
+function closeCalPopup() {
+  document.getElementById('cal-overlay').classList.remove('open');
+}
+function calOverlayClick(e) {
+  if (e.target === document.getElementById('cal-overlay')) closeCalPopup();
+}
+function closeExtra() { closeCalPopup(); }
+
+/* ── 홈으로 이동 ── */
+function goHome() {
+  try {
+    // postMessage로 부모(대문)에 홈 이동 요청
+    window.parent.postMessage({ action: 'goHome' }, '*');
+  } catch(e) {
+    history.back();
+  }
+}
+
+/* ── 모드 ── */
+function toggleMode() {
+  autoMode = !autoMode;
+  if (autoMode) goToday();
+  save(); renderCard();
+}
+function onAutoChange() {
+  autoMode = document.getElementById('auto-chk').checked;
+  if (autoMode) goToday();
+  save(); renderCard();
+}
+
+/* ── 날짜 이동 ── */
+function navigate(dir) {
+  const d = new Date(2025, viewMonth, viewDay + dir);
+  viewMonth = d.getMonth(); viewDay = d.getDate();
+  calViewMonth = viewMonth;
+  renderCard(); loadVerses();
+}
+function goToday() {
+  const t = new Date();
+  viewMonth = t.getMonth(); viewDay = t.getDate();
+  calViewMonth = viewMonth;
+}
+
+/* ── 체크 ── */
+function toggleCheck() {
+  const key = (viewMonth+1)+'-'+viewDay;
+  if (checkedDays[key]) delete checkedDays[key];
+  else checkedDays[key] = true;
+  save(); renderCard();
+  updateProgress();
+}
+function resetAll() {
+  if (!confirm('모든 읽음 기록을 초기화하시겠습니까?')) return;
+  checkedDays = {}; save(); renderCard(); updateProgress(); closeModal();
+}
+
+/* ── 카드 렌더 ── */
+function renderCard() {
+  const key   = (viewMonth+1)+'-'+viewDay;
+  const range = SCHEDULE[key] || '—';
+  const isDone = !!checkedDays[key];
+
+  document.getElementById('mode-btn').textContent = autoMode ? '⏱ 자동' : '✋ 수동';
+
+  const d = new Date(2025, viewMonth, viewDay);
+  const dateStr = (viewMonth+1)+'월 '+viewDay+'일 ('+DAYS_KO[d.getDay()]+')';
+  document.getElementById('tc-date-str').textContent = dateStr;
+  document.getElementById('tc-range').textContent    = range;
+
+  const cb = document.getElementById('check-btn');
+  document.getElementById('check-icon').textContent  = isDone ? '✓' : '○';
+  document.getElementById('check-label').textContent = isDone ? '읽음 ✓' : '읽었습니다';
+  cb.className = isDone ? 'done' : '';
+
+  // 헤더 OK 버튼 상태 업데이트
+  const okBtn = document.getElementById('hd-ok-btn');
+  if (okBtn) okBtn.classList.toggle('done', isDone);
+
+  const cur = new Date(2025,viewMonth,viewDay);
+  document.getElementById('prev-btn').disabled = autoMode || cur <= new Date(2025,0,1);
+  document.getElementById('next-btn').disabled = autoMode || cur >= new Date(2025,11,31);
+  document.getElementById('nav-lock-note').style.display = autoMode ? 'block' : 'none';
+
+  document.getElementById('auto-chk').checked = autoMode;
+  updateProgress();
+}
+
+function jumpToday() {
+  goToday();
+  renderCard();
+  loadVerses();
+}
+
+function updateProgress() {
+  const total = Object.keys(SCHEDULE).length;
+  const done  = Object.keys(checkedDays).length;
+  const pct   = Math.round(done/total*100);
+  document.getElementById('pb-fill').style.width = pct+'%';
+  document.getElementById('pb-text').textContent = done+' / '+total;
+}
+
+/* ══════════════════════════════
+   성경 본문 로딩
+══════════════════════════════ */
+function setVersion(v) {
+  curVersion = v;
+  const match = b =>
+    b.textContent.trim() === v ||
+    (v==='우리말성경' && b.textContent.trim()==='우리말') ||
+    (v==='niv' && b.textContent.trim()==='NIV');
+  document.querySelectorAll('.ver-btn,.hd-ver-btn,.tc-ver-btn').forEach(b =>
+    b.classList.toggle('active', match(b))
+  );
+  ttsPause();
+  save(); loadVerses();
+}
+
+/* 버전 id ↔ BibleDB 저장 키 매핑 */
+function bibleDbId(version) {
+  if (version === 'niv') return 'NIV';
+  return version; // '개역개정' | '우리말성경'
+}
+
+async function loadVerses() {
+  const key   = (viewMonth+1)+'-'+viewDay;
+  const range = SCHEDULE[key];
+  if (!range) { showVerseError('해당 날짜의 스케줄이 없습니다.'); return; }
+
+  document.getElementById('verse-loading').style.display = 'block';
+  document.getElementById('verse-content').innerHTML = '';
+
+  const dbId = bibleDbId(curVersion);
+  if (!bibleCache[dbId]) {
+    try {
+      const data = await BibleDB.load(dbId);
+      if (!data) {
+        showVerseError('⚠️ "'+curVersion+'" 성경 데이터가 등록되어 있지 않습니다.\n대문 화면 > 📂 성경 데이터 관리에서 파일을 업로드해 주세요.');
+        return;
+      }
+      bibleCache[dbId] = data;
+    } catch(e) {
+      showVerseError('⚠️ 성경 데이터를 불러올 수 없습니다.\n('+e.message+')');
+      return;
+    }
+  }
+
+  const bible = bibleCache[dbId];
+  const segments = parseRange(range);
+  let html = '';
+
+  for (const seg of segments) {
+    const { abbr, startCh, endCh } = seg;
+    const koreanName = BOOK_KO[abbr] || abbr;
+    const chapters = BibleDB.getChapters(bible, koreanName, startCh, endCh);
+    if (!chapters.length) { html += `<div class="ch-title">📖 ${koreanName} — 데이터 없음</div>`; continue; }
+
+    // book-title 없이 ch-title에 책이름+장번호를 한 줄로
+    for (const chObj of chapters) {
+      html += `<div class="ch-title">📖 ${koreanName} ${chObj.ch}장</div>`;
+      chObj.verses.forEach(v => {
+        if (!v.text) return;
+        // 절 텍스트에서 혹시 포함된 sup/윗첨자 제거
+        const cleanText = String(v.text).replace(/<sup[^>]*>.*?<\/sup>/gi,'').replace(/<[^>]+>/g,'');
+        const cleanNum  = String(v.num).replace(/<[^>]+>/g,'');
+        html += `<div class="verse-row"><span class="v-num">${cleanNum}</span><span class="v-text">${cleanText}</span></div>`;
+      });
+    }
+  }
+
+  document.getElementById('verse-loading').style.display = 'none';
+  document.getElementById('verse-content').innerHTML = html || '<div style="color:var(--txt-dim);padding:16px;">본문을 표시할 수 없습니다.</div>';
+  _patchTts();
+}
+
+/* 범위 파싱: "창 1-3, 출 1-2" 형태 처리 */
+function parseRange(rangeStr) {
+  const results = [];
+  // 쉼표로 분리된 여러 책 처리 (예: "딛 1-3, 몬 1")
+  const parts = rangeStr.split(',').map(s=>s.trim());
+  for (const part of parts) {
+    // "책약어 장-장" 또는 "책약어 장"
+    const m = part.match(/^([가-힣]+)\s+(\d+)(?:-(\d+))?$/);
+    if (!m) continue;
+    const abbr    = m[1];
+    const startCh = parseInt(m[2]);
+    const endCh   = m[3] ? parseInt(m[3]) : startCh;
+    results.push({ abbr, startCh, endCh });
+  }
+  return results;
+}
+
+function showVerseError(msg) {
+  document.getElementById('verse-loading').style.display = 'none';
+  document.getElementById('verse-content').innerHTML =
+    `<div style="color:var(--txt-dim);padding:16px;font-size:.82rem;line-height:1.7;white-space:pre-wrap;">${msg}</div>`;
+}
+
+/* ── 캘린더 ── */
+function calNav(dir) {
+  calViewMonth = (calViewMonth+dir+12)%12;
+  renderCal();
+}
+function renderCal() {
+  const MONTHS_KO2 = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  document.getElementById('cal-month-label').textContent = '2025년 '+MONTHS_KO2[calViewMonth];
+
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+  ['일','월','화','수','목','금','토'].forEach(d=>{
+    const el=document.createElement('div'); el.className='cal-day-hd'; el.textContent=d; grid.appendChild(el);
+  });
+
+  const firstDay = new Date(2025,calViewMonth,1).getDay();
+  const daysInMonth = new Date(2025,calViewMonth+1,0).getDate();
+  const today = new Date();
+
+  for(let i=0;i<firstDay;i++){const el=document.createElement('div');el.className='cal-cell empty';grid.appendChild(el);}
+
+  for(let d=1;d<=daysInMonth;d++){
+    const el=document.createElement('div'); el.className='cal-cell'; el.textContent=d;
+    const key=(calViewMonth+1)+'-'+d;
+    if(checkedDays[key]) el.classList.add('is-done');
+    if(calViewMonth===today.getMonth()&&d===today.getDate()) el.classList.add('is-today');
+    if(calViewMonth===viewMonth&&d===viewDay) el.classList.add('selected');
+    el.onclick=()=>{ calSelDay=d; updateCalInfo(); renderCal(); };
+    grid.appendChild(el);
+  }
+  updateCalInfo();
+}
+function updateCalInfo() {
+  const d = calSelDay || viewDay;
+  const key=(calViewMonth+1)+'-'+d;
+  document.getElementById('crb-date').textContent=(calViewMonth+1)+'월 '+d+'일';
+  document.getElementById('crb-range').textContent=SCHEDULE[key]||'—';
+  const moveBtn = document.getElementById('cal-move-btn');
+  moveBtn.style.opacity = autoMode ? '.4' : '1';
+  moveBtn.title = autoMode ? '자동 모드에서는 설정에서 수동 모드로 전환 후 이동할 수 있습니다.' : '';
+}
+function goSelectedDay() {
+  if (autoMode) { alert('🔒 자동 모드에서는 날짜를 이동할 수 없습니다.\n설정(⚙️)에서 수동 모드로 전환해 주세요.'); return; }
+  viewMonth=calViewMonth; viewDay=calSelDay||viewDay;
+  closeExtra(); renderCard(); loadVerses();
+  document.getElementById('content-area').scrollTo({top:0, behavior:'smooth'});
+}
+
+/* ── 통계 ── */
+function calcStreak() {
+  let streak=0; const t=new Date();
+  for(let i=0;i<365;i++){
+    const d=new Date(t); d.setDate(t.getDate()-i);
+    const key=(d.getMonth()+1)+'-'+d.getDate();
+    if(checkedDays[key]) streak++; else break;
+  }
+  return streak;
+}
+function renderStat() {
+  document.getElementById('streak-num').textContent=calcStreak();
+  const total=Object.keys(SCHEDULE).length;
+  const done=Object.keys(checkedDays).length;
+  document.getElementById('total-num').textContent=done+' / '+total;
+
+  const MONTH_DAYS=[31,28,31,30,31,30,31,31,30,31,30,31];
+  const MONTH_LABELS=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  let html='';
+  for(let m=0;m<12;m++){
+    const days=MONTH_DAYS[m];
+    let cnt=0;
+    for(let d=1;d<=days;d++){ if(checkedDays[(m+1)+'-'+d]) cnt++; }
+    const pct=Math.round(cnt/days*100);
+    const barH=Math.max(2,Math.round(pct*0.4));
+    html+=`<div class="ms-item">
+      <div class="ms-month">${MONTH_LABELS[m]}</div>
+      <div class="ms-bar-wrap"><div class="ms-bar" style="height:${barH}px"></div></div>
+      <div class="ms-pct">${pct}%</div>
+    </div>`;
+  }
+  document.getElementById('month-stats').innerHTML=html;
+}
+
+/* ── 성경 데이터 업로드 ── */
+async function uploadBible(input, verId) {
+  const file = input.files[0];
+  if (!file) return;
+  const el = document.getElementById('bible-status-' + verId);
+  el.textContent = '⏳ 읽는 중...';
+  el.className = 's-file-badge unset';
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    // 다양한 JSON 형식 정규화
+    let verses = [];
+    const bookNamesMap = data.bookNames || {};
+
+    // 책번호 → 한글 이름 헬퍼
+    function getBookName(bookId) {
+      const bn = bookNamesMap[String(bookId)];
+      if (!bn) return String(bookId);
+      return bn.name || bn.abbr || String(bookId);
+    }
+
+    if (Array.isArray(data)) {
+      // [{book,chapter,verse,text}] 형식
+      if (data[0] && data[0].text !== undefined) {
+        verses = data;
+      }
+      // [{name,chapters:[[절,...],...]}, ...] 형식
+      else if (data[0] && data[0].chapters) {
+        const BOOKS = data.map(b => b.name || b.abbrev || b.book || '');
+        data.forEach((b, bi) => {
+          const bookName = BOOKS[bi];
+          (b.chapters || []).forEach((ch, ci) => {
+            (Array.isArray(ch) ? ch : ch.verses || []).forEach((v, vi) => {
+              verses.push({ book: bookName, chapter: ci+1, verse: vi+1, text: typeof v === 'string' ? v : v.text || '' });
+            });
+          });
+        });
+      }
+    } else if (data.verses) {
+      const v = data.verses;
+      if (Array.isArray(v)) {
+        // [{book,chapter,verse,text}] 배열 형식
+        verses = v;
+      } else if (typeof v === 'object') {
+        // { "책번호": { "장번호": { "절번호": "본문" } } } 형식
+        Object.keys(v).sort((a,b)=>+a-+b).forEach(bookId => {
+          const bookName = getBookName(bookId);
+          const chapObj = v[bookId];
+          Object.keys(chapObj).sort((a,b)=>+a-+b).forEach(chapId => {
+            const verseObj = chapObj[chapId];
+            Object.keys(verseObj).sort((a,b)=>+a-+b).forEach(verseId => {
+              verses.push({ book: bookName, chapter: +chapId, verse: +verseId, text: verseObj[verseId] });
+            });
+          });
+        });
+      }
+    }
+    if (!verses.length) throw new Error('인식할 수 없는 형식입니다.');
+    await BibleDB.save(verId, { verses, bookNames: data.bookNames || {} }, { fileName: file.name, label: verId });
+    el.textContent = '✓ ' + verses.length + '절 등록됨';
+    el.className = 's-file-badge';
+    bibleCache = {};
+    loadVerses();
+    showToast('✓ ' + verId + ' 등록 완료');
+  } catch(e) {
+    el.textContent = '오류: ' + e.message;
+    el.className = 's-file-badge unset';
+  }
+  input.value = '';
+}
+
+async function deleteBible(verId) {
+  if (!confirm(verId + ' 데이터를 삭제할까요?')) return;
+  await BibleDB.remove(verId);
+  bibleCache = {};
+  const el = document.getElementById('bible-status-' + verId);
+  if (el) { el.textContent = '미등록'; el.className = 's-file-badge unset'; }
+  showToast('🗑 ' + verId + ' 삭제됨');
+}
+
+/* ── 성경 데이터 상태 ── */
+async function refreshBibleDataStatus(reloadCurrent) {
+  for (const id of ['개역개정','우리말성경','NIV']) {
+    const el = document.getElementById('bible-status-'+id);
+    if (!el) continue;
+    try {
+      const m = await BibleDB.meta(id);
+      if (m) {
+        el.textContent = '✓ '+(m.verseCount||0)+'절 등록됨';
+        el.className   = 's-file-badge';
+      } else {
+        el.textContent = '미등록';
+        el.className   = 's-file-badge unset';
+      }
+    } catch(e) {
+      el.textContent = '미등록';
+      el.className   = 's-file-badge unset';
+    }
+  }
+  if (reloadCurrent) {
+    bibleCache = {};
+    loadVerses();
+  }
+}
+
+function showToast(msg) {
+  let t = document.getElementById('_toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = '_toast';
+    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);background:#c9a84c;color:#1a1400;padding:8px 22px;border-radius:20px;font-weight:700;font-size:.82rem;opacity:0;transition:all .3s;pointer-events:none;z-index:9999;white-space:nowrap;';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg; t.style.opacity = '1'; t.style.transform = 'translateX(-50%) translateY(0)';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateX(-50%) translateY(60px)'; }, 2200);
+}
+function openModal() {
+  refreshBibleDataStatus(false);
+  restoreAudioFolderHandle();
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
+function overlayClick(e){if(e.target===document.getElementById('modal-overlay'))closeModal();}
+
+/* ══════════════════════════════
+   낭독 mp3 폴더 (Android WebView 호환 방식)
+   ─ File System Access API(showDirectoryPicker)는 Android WebView에서
+     지원되지 않으므로 <input type="file" webkitdirectory> 로 대체.
+   ─ 선택된 File 객체들을 IndexedDB에 통째로 저장해 다음 실행 시 재사용.
+══════════════════════════════ */
+let audioFilesLoaded = false;   // 폴더(파일 목록)가 로드되었는지 여부
+let audioFolderName  = '';      // 표시용 폴더 이름
+
+function _audioFolderDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('AudioFolderDB', 2);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains('files')) db.createObjectStore('files');
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function _saveAudioFiles(fileList) {
+  const db = await _audioFolderDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('files', 'readwrite');
+    tx.objectStore('files').put(fileList, 'prsFiles'); // File 객체 배열 그대로 저장 가능
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function _loadAudioFiles() {
+  const db = await _audioFolderDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('files', 'readonly');
+    const req = tx.objectStore('files').get('prsFiles');
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function _deleteAudioFiles() {
+  const db = await _audioFolderDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('files', 'readwrite');
+    tx.objectStore('files').delete('prsFiles');
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+function _setAudioFolderStatus(text, ok) {
+  const el = document.getElementById('audio-folder-status');
+  if (!el) return;
+  el.textContent = text;
+  el.className = ok ? 's-file-badge' : 's-file-badge unset';
+}
+
+/* 선택된 파일 목록(webkitRelativePath 포함)으로 "책 폴더명 → {장번호: File}" 인덱스 구축 */
+function _buildPrsIndex(files) {
+  _prsResetScanCache();
+  for (const file of files) {
+    const rel = file.webkitRelativePath || file.name;
+    if (!/\.mp3$/i.test(rel)) continue;
+    const parts = rel.split('/');
+    if (parts.length < 2) continue; // 하위 폴더 구조가 없으면 건너뜀
+    const bookFolder = parts[parts.length - 2].normalize('NFC');
+    const fileName   = parts[parts.length - 1];
+    const chNum = prsExtractChapterNum(fileName);
+    if (chNum === null) {
+      prsScanWarnings.push(`${bookFolder}: 장번호를 인식하지 못한 파일 — "${fileName}"`);
+      continue;
+    }
+    if (!_prsChapterCache[bookFolder]) _prsChapterCache[bookFolder] = {};
+    if (_prsChapterCache[bookFolder][chNum]) {
+      prsScanWarnings.push(`${bookFolder} ${chNum}장: 파일이 중복됨 (먼저 찾은 파일 사용)`);
+      continue;
+    }
+    _prsChapterCache[bookFolder][chNum] = file;
+  }
+  if (prsScanWarnings.length) console.warn('[낭독 스캔 경고]', prsScanWarnings);
+}
+
+async function pickAudioFolder(event) {
+  const files = Array.from(event.target.files || []);
+  if (!files.length) return;
+  try {
+    await _saveAudioFiles(files);
+    audioFilesLoaded = true;
+    audioFolderName = (files[0].webkitRelativePath || '').split('/')[0] || '폴더';
+    _buildPrsIndex(files);
+    _setAudioFolderStatus('✓ ' + audioFolderName, true);
+    showToast('✓ 음원 폴더 연결됨: ' + audioFolderName);
+  } catch (e) {
+    console.error(e);
+    alert('폴더 저장 중 오류: ' + e.message);
+  } finally {
+    event.target.value = ''; // 같은 폴더 재선택 가능하도록 초기화
+  }
+}
+
+async function clearAudioFolder() {
+  if (!confirm('연결된 음원 폴더 설정을 해제할까요?')) return;
+  await _deleteAudioFiles();
+  audioFilesLoaded = false;
+  audioFolderName = '';
+  _prsResetScanCache();
+  _setAudioFolderStatus('미설정', false);
+  showToast('🗑 음원 폴더 연결 해제됨');
+}
+
+async function restoreAudioFolderHandle() {
+  try {
+    const files = await _loadAudioFiles();
+    if (!files || !files.length) { _setAudioFolderStatus('미설정', false); return; }
+    audioFilesLoaded = true;
+    audioFolderName = (files[0].webkitRelativePath || '').split('/')[0] || '폴더';
+    _buildPrsIndex(files);
+    _setAudioFolderStatus('✓ ' + audioFolderName, true);
+  } catch (e) {
+    console.error(e);
+    _setAudioFolderStatus('미설정', false);
+  }
+}
+
+/* ══════════════════════════════
+   성경 낭독 (PRS MP3 음원)
+══════════════════════════════ */
+
+// 책명 → 폴더 번호 매핑
+const PRS_BOOK_NUM = {
+  '창세기':1,'출애굽기':2,'레위기':3,'민수기':4,'신명기':5,
+  '여호수아':6,'사사기':7,'룻기':8,'사무엘상':9,'사무엘하':10,
+  '열왕기상':11,'열왕기하':12,'역대상':13,'역대하':14,
+  '에스라':15,'느헤미야':16,'에스더':17,'욥기':18,'시편':19,'잠언':20,
+  '전도서':21,'아가':22,'이사야':23,'예레미야':24,'예레미야애가':25,
+  '에스겔':26,'다니엘':27,'호세아':28,'요엘':29,'아모스':30,
+  '오바댜':31,'요나':32,'미가':33,'나훔':34,'하박국':35,
+  '스바냐':36,'학개':37,'스가랴':38,'말라기':39,
+  '마태복음':40,'마가복음':41,'누가복음':42,'요한복음':43,'사도행전':44,
+  '로마서':45,'고린도전서':46,'고린도후서':47,'갈라디아서':48,'에베소서':49,
+  '빌립보서':50,'골로새서':51,'데살로니가전서':52,'데살로니가후서':53,
+  '디모데전서':54,'디모데후서':55,'디도서':56,'빌레몬서':57,'히브리서':58,
+  '야고보서':59,'베드로전서':60,'베드로후서':61,
+  '요한1서':62,'요한2서':63,'요한3서':64,'유다서':65,'요한계시록':66
+};
+
+// 폴더명 예외 매핑 (번호. 책명_장별 구절 영상(개역개정))
+const PRS_FOLDER_NAME = {
+  16: '16.느헤미야'  // 띄어쓰기 없는 예외
+};
+
+// 파일명 내 책명 매핑 (파일명에 쓰이는 이름)
+const PRS_FILE_BOOK = {
+  '요한1서':'요한일서','요한2서':'요한이서','요한3서':'요한삼서'
+};
+
+function prsGetFolderName(bookName) {
+  const num = PRS_BOOK_NUM[bookName];
+  if (!num) return null;
+  return PRS_FOLDER_NAME[num] ? PRS_FOLDER_NAME[num] : `${num}. ${bookName}`;
+}
+
+// (구) 경로 문자열 조립 방식 — 책마다 파일명 규칙이 달라 신뢰할 수 없어 더 이상 사용하지 않음.
+// 실제 재생은 아래 폴더 스캔(prsScanBookChapters) 결과를 사용합니다.
+function prsGetAudioPath(bookName, chNum) {
+  const num = PRS_BOOK_NUM[bookName];
+  if (!num) return null;
+  const fileBook = PRS_FILE_BOOK[bookName] || bookName;
+  const folderBook = PRS_FOLDER_NAME[num] ? PRS_FOLDER_NAME[num] : `${num}. ${bookName}`;
+  const folder = `성경낭송_PRS/${folderBook}_장별 구절 영상(개역개정)`;
+  const ch = String(chNum).padStart(3, '0');
+  const fileName = `${ch}_${fileBook}_${ch}편.mp3`;
+  return `${folder}/${fileName}`;
+}
+
+/* ── 책 폴더명 → { 장번호: File } 매핑 캐시 (webkitdirectory 선택 시 한 번에 구축됨) ── */
+const _prsChapterCache = {};   // bookFolderName -> { chNum: File }
+const prsScanWarnings  = [];   // 스캔 중 발견된 이상 항목 (중복 장번호, 인식 실패 파일 등)
+
+function _prsResetScanCache() {
+  for (const k in _prsChapterCache) delete _prsChapterCache[k];
+  prsScanWarnings.length = 0;
+}
+
+// 파일명 안에서 "N장" 또는 "N편" 형태의 숫자를 장번호로 추출
+// 1) 일부 파일(특히 Mac을 거친 파일)은 한글이 자음/모음 분해형(NFD)으로 저장되어 있어
+//    완성형 문자 "장"/"편"과 코드가 달라 매칭되지 않으므로 NFC로 정규화 후 비교
+// 2) 숫자와 장/편 사이에 일반 공백이나 눈에 안 보이는 특수 공백이 끼어도 인식되도록 처리
+//    (밑줄·한글 등 다른 문자는 허용하지 않음 — "시편"의 "편" 글자를 잘못 낚아채는 것을 방지)
+function prsExtractChapterNum(fileName) {
+  const norm = fileName.normalize('NFC');
+  const m = norm.match(/(\d+)[\s\u200B\u200C\u200D\uFEFF\u00A0]*[장편]/);
+  return m ? parseInt(m[1], 10) : null;
+}
+
+async function prsGetAudioFile(bookName, chNum) {
+  const folderName = prsGetFolderName(bookName);
+  if (!folderName) return null;
+  const targetName = (folderName + '_장별 구절 영상(개역개정)').normalize('NFC');
+  const map = _prsChapterCache[targetName];
+  if (!map || !map[chNum]) return null;
+  return map[chNum]; // 이미 File 객체이므로 그대로 반환
+}
+
+// 현재 화면에 표시된 장 목록 수집
+function ttsCollectChapters() {
+  const titles = document.querySelectorAll('#verse-content .ch-title');
+  const chapters = [];
+  titles.forEach(el => {
+    // "📖 시편 71장" 형태 파싱
+    const m = el.textContent.replace('📖','').trim().match(/^(.+?)\s+(\d+)장$/);
+    if (m) chapters.push({ el, bookName: m[1].trim(), chNum: parseInt(m[2]) });
+  });
+  return chapters;
+}
+
+let ttsAudio     = null;
+let ttsChapters  = [];
+let ttsCurIdx    = 0;
+let ttsPlaying   = false;
+let ttsRate      = 1.0;
+let ttsAutoScroll = true;
+
+function ttsHighlightChapter(idx) {
+  document.querySelectorAll('#verse-content .ch-title.tts-active')
+    .forEach(el => el.classList.remove('tts-active'));
+  document.querySelectorAll('#verse-content .verse-row.tts-active')
+    .forEach(el => el.classList.remove('tts-active'));
+  if (idx < ttsChapters.length) {
+    const ch = ttsChapters[idx];
+    ch.el.classList.add('tts-active');
+    if (ttsAutoScroll) ch.el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.getElementById('tts-label').textContent =
+      `낭독 중 … ${ch.bookName} ${ch.chNum}장`;
+  }
+}
+
+let ttsObjectUrl = null;
+
+async function ttsPlayFrom(idx) {
+  if (idx >= ttsChapters.length) { ttsDone(); return; }
+  ttsCurIdx = idx;
+  ttsHighlightChapter(idx);
+
+  const ch = ttsChapters[idx];
+  const file = await prsGetAudioFile(ch.bookName, ch.chNum);
+
+  if (!file) {
+    // 음원 없으면 다음 장으로
+    if (ttsPlaying) ttsPlayFrom(idx + 1);
+    return;
+  }
+
+  if (ttsAudio) { ttsAudio.pause(); ttsAudio.src = ''; }
+  if (ttsObjectUrl) { URL.revokeObjectURL(ttsObjectUrl); ttsObjectUrl = null; }
+
+  ttsObjectUrl = URL.createObjectURL(file);
+  ttsAudio = new Audio(ttsObjectUrl);
+  ttsAudio.playbackRate = ttsRate;
+  ttsAudio.play().catch(() => {
+    // 재생 실패 시 다음 장으로
+    if (ttsPlaying) ttsPlayFrom(idx + 1);
+  });
+  ttsAudio.onended = () => { if (ttsPlaying) ttsPlayFrom(idx + 1); };
+}
+
+function ttsToggle() {
+  ttsPlaying ? ttsPause() : ttsPlay();
+}
+
+function ttsPlay() {
+  if (!audioFilesLoaded) {
+    alert('먼저 설정(⚙️)에서 낭독 mp3 폴더를 지정해 주세요.');
+    return;
+  }
+  ttsChapters = ttsCollectChapters();
+  if (!ttsChapters.length) { alert('낭독할 본문이 없습니다.'); return; }
+  ttsPlaying = true;
+  const btn = document.getElementById('tts-play-btn');
+  btn.textContent = '⏸'; btn.classList.add('playing');
+  ttsPlayFrom(ttsCurIdx);
+}
+
+function ttsPause() {
+  ttsPlaying = false;
+  if (ttsAudio) { ttsAudio.pause(); }
+  const btn = document.getElementById('tts-play-btn');
+  if (btn) { btn.textContent = '▶'; btn.classList.remove('playing'); }
+  document.getElementById('tts-label').textContent = '성경 낭독';
+  document.querySelectorAll('#verse-content .ch-title.tts-active')
+    .forEach(el => el.classList.remove('tts-active'));
+}
+
+function ttsDone() {
+  ttsPlaying = false; ttsCurIdx = 0;
+  if (ttsAudio) { ttsAudio.pause(); ttsAudio = null; }
+  const btn = document.getElementById('tts-play-btn');
+  if (btn) { btn.textContent = '▶'; btn.classList.remove('playing'); }
+  document.getElementById('tts-label').textContent = '낭독 완료 ✓';
+  document.querySelectorAll('#verse-content .ch-title.tts-active')
+    .forEach(el => el.classList.remove('tts-active'));
+}
+
+function ttsSetRate(rate) {
+  ttsRate = rate;
+  document.querySelectorAll('.tts-speed-btn').forEach(b => {
+    b.classList.toggle('active', parseFloat(b.dataset.rate) === rate);
+  });
+  if (ttsAudio) ttsAudio.playbackRate = rate;
+}
+
+function ttsToggleScroll() {
+  ttsAutoScroll = !ttsAutoScroll;
+  const btn = document.getElementById('tts-scroll-btn');
+  btn.classList.toggle('on', ttsAutoScroll);
+  btn.textContent = ttsAutoScroll ? '🔃 자동스크롤' : '↕ 수동스크롤';
+}
+
+const _patchTts = () => {
+  if (ttsPlaying) ttsPause();
+  ttsCurIdx = 0;
+  const lbl = document.getElementById('tts-label');
+  if (lbl) lbl.textContent = '성경 낭독';
+};
+/* ── 초기화 ── */
+load();
+goToday();
+calSelDay = viewDay;
+renderCard();
+loadVerses();
+updateProgress();
+refreshBibleDataStatus(false);
+restoreAudioFolderHandle();
+</script>
+</body>
+</html>

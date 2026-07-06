@@ -1,0 +1,12 @@
+{
+  "name": "은혜가풍성한교회",
+  "short_name": "은혜교회",
+  "start_url": "./대문.html",
+  "display": "standalone",
+  "background_color": "#101d2e",
+  "theme_color": "#101d2e",
+  "icons": [
+    { "src": "S_QT1.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "S_QT1.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#101d2e">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="S_QT1.png">
+<title>오늘의 말씀 — 은혜가풍성한교회</title>
+<style>
+:root {
+  --navy:     #1b2e48;
+  --navy-lt:  #243d5e;
+  --navy-dk:  #101d2e;
+  --gold:     #9a7b35;
+  --gold-lt:  #c9a84c;
+  --gold-ltr: #e8c96a;
+  --cream:    #f0ead8;
+  --txt:      #d8cdb0;
+  --txt-dim:  #8a8070;
+  --green:    #4a9b6f;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bot: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body {
+  font-family: 'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',sans-serif;
+  background: var(--navy-dk);
+  color: var(--cream);
+  height: 100vh; height: 100dvh;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+}
+
+/* ── 헤더 ── */
+header {
+  background: linear-gradient(135deg, var(--navy-dk), var(--navy));
+  border-bottom: 1px solid rgba(154,123,53,.4);
+  padding: 14px 16px 10px;
+  padding-top: calc(14px + var(--safe-top));
+  flex-shrink: 0;
+}
+.header-top {
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 8px;
+}
+.logo-cross { font-size: 1.5rem; color: var(--gold-lt); display: block; text-align:center; }
+.logo-title  { font-size: 1rem; font-weight: 800; color: var(--gold-lt); letter-spacing: .5px; text-align:center; }
+.logo-sub    { font-size: .7rem; color: var(--txt-dim); margin-top: 1px; text-align:center; }
+
+/* ── 재생기1: 찬송 플레이어 (헤더) ── */
+#hymn-player {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(0,0,0,.25);
+  border: 1px solid rgba(154,123,53,.3);
+  border-radius: 22px;
+  padding: 6px 12px;
+}
+#hymn-play-btn {
+  background: linear-gradient(135deg, var(--gold), var(--gold-lt));
+  border: none; border-radius: 50%;
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0; font-size: .8rem;
+  color: var(--navy-dk); transition: transform .1s;
+}
+#hymn-play-btn:active { transform: scale(.92); }
+#hymn-track-name {
+  flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: .67rem; color: var(--txt-dim);
+}
+#hymn-vol-btn {
+  background: none; border: none; cursor: pointer;
+  font-size: .85rem; color: var(--txt-dim); padding: 2px 4px; flex-shrink: 0;
+}
+#hymn-file-label {
+  cursor: pointer; font-size: .75rem; color: var(--txt-dim); flex-shrink: 0;
+}
+#hymn-progress-wrap {
+  width: 100%; height: 3px;
+  background: rgba(255,255,255,.1);
+  border-radius: 2px; margin-top: 5px; cursor: pointer;
+}
+#hymn-progress-bar {
+  height: 100%; background: var(--gold-lt);
+  border-radius: 2px; width: 0%;
+  pointer-events: none;
+}
+
+/* ── 콘텐츠 영역 ── */
+#content-area {
+  flex: 1; overflow: hidden; position: relative;
+  display: flex; flex-direction: column;
+}
+
+/* ── 홈 패널 ── */
+#home-panel {
+  flex: 1; overflow-y: auto;
+  display: flex; flex-direction: column;
+}
+#home-panel main {
+  flex: 1; display: flex; flex-direction: column;
+  justify-content: center; gap: 14px;
+  padding: 16px 18px 8px;
+  max-width: 460px; width: 100%; margin: 0 auto;
+}
+.footer-note {
+  text-align: center; font-size: .68rem; color: var(--txt-dim);
+  padding: 6px 24px 8px; line-height: 1.6;
+}
+
+/* ── 메뉴 카드 ── */
+.menu-btn {
+  display: flex; align-items: center; gap: 16px;
+  background: linear-gradient(160deg, var(--navy), var(--navy-lt));
+  border: 1px solid rgba(154,123,53,.35); border-radius: 16px;
+  padding: 20px 18px; box-shadow: 0 8px 32px rgba(0,0,0,.4);
+  text-decoration: none; color: var(--cream);
+  cursor: pointer; font-family: inherit; width: 100%; text-align: left;
+  transition: transform .15s, border-color .15s;
+  position: relative; overflow: hidden;
+}
+.menu-btn:active  { transform: scale(.98); }
+.menu-btn:hover   { border-color: var(--gold); }
+.menu-icon {
+  font-size: 1.8rem; flex-shrink: 0; width: 50px; height: 50px;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(90deg, var(--gold), var(--gold-lt));
+  border-radius: 13px; color: var(--navy-dk);
+}
+.menu-body  { flex: 1; }
+.menu-title { font-size: 1rem; font-weight: 800; color: var(--gold-ltr); margin-bottom: 4px; letter-spacing: .3px; }
+.menu-desc  { font-size: .76rem; color: var(--txt-dim); line-height: 1.5; }
+.menu-badge {
+  position: absolute; top: 11px; right: 13px;
+  font-size: .6rem; font-weight: 700;
+  padding: 3px 9px; border-radius: 10px; letter-spacing: .3px;
+}
+.menu-badge.ready { background: rgba(74,155,111,.18); color: #7bd1a3; border: 1px solid rgba(74,155,111,.35); }
+.menu-badge.soon  { background: rgba(154,123,53,.18); color: var(--txt-dim); border: 1px solid rgba(154,123,53,.3); }
+
+/* ── 재생기2: 미니 플레이어 (하단) ── */
+#mini-player {
+  flex-shrink: 0;
+  background: linear-gradient(135deg, var(--navy-dk), var(--navy));
+  border-top: 1px solid rgba(154,123,53,.35);
+  padding: 8px 14px calc(8px + var(--safe-bot));
+}
+.mp-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+#mp-track-name {
+  flex: 1; font-size: .72rem; color: var(--cream);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mp-controls { display: flex; align-items: center; gap: 6px; }
+.mp-btn {
+  background: none; border: none; cursor: pointer;
+  font-size: 1rem; color: var(--txt-dim); padding: 3px;
+  transition: color .15s;
+}
+.mp-btn:hover { color: var(--gold-lt); }
+#mp-play-btn {
+  background: linear-gradient(135deg, var(--gold), var(--gold-lt));
+  border: none; border-radius: 50%;
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: .9rem; color: var(--navy-dk);
+  transition: transform .1s; flex-shrink: 0;
+}
+#mp-play-btn:active { transform: scale(.92); }
+.mp-progress-wrap {
+  width: 100%; height: 3px; background: rgba(255,255,255,.1);
+  border-radius: 2px; cursor: pointer; margin-bottom: 6px;
+}
+.mp-progress-bar {
+  height: 100%; background: var(--gold-lt);
+  border-radius: 2px; width: 0%; pointer-events: none;
+}
+.mp-slots { display: flex; gap: 6px; }
+.mp-slot {
+  flex: 1; padding: 5px 6px;
+  background: rgba(0,0,0,.2);
+  border: 1px solid rgba(154,123,53,.25);
+  border-radius: 8px; font-size: .6rem; color: var(--txt-dim);
+  cursor: pointer; text-align: center;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  transition: border-color .15s; position: relative;
+}
+.mp-slot:hover { border-color: var(--gold); }
+.mp-slot.loaded { color: var(--cream); border-color: rgba(154,123,53,.5); }
+.mp-slot.playing { color: var(--gold-ltr); border-color: var(--gold-lt); background: rgba(154,123,53,.15); }
+.mp-slot-del {
+  position: absolute; top: 1px; right: 3px;
+  font-size: .55rem; color: var(--txt-dim); display: none;
+}
+.mp-slot.loaded .mp-slot-del { display: block; }
+.mp-bottom { display: flex; align-items: center; justify-content: space-between; margin-top: 5px; }
+.mp-repeat-btn {
+  background: none; border: 1px solid rgba(154,123,53,.25); border-radius: 10px;
+  cursor: pointer; font-size: .65rem; color: var(--txt-dim); padding: 2px 8px;
+  transition: all .15s;
+}
+.mp-repeat-btn.on { color: var(--gold-ltr); border-color: var(--gold-lt); background: rgba(154,123,53,.15); }
+.mp-time { font-size: .62rem; color: var(--txt-dim); }
+
+/* ── iframe 패널 ── */
+#iframe-panel {
+  position: absolute; inset: 0;
+  display: none; flex-direction: column;
+}
+#iframe-panel.active { display: flex; }
+#content-iframe { flex: 1; border: none; width: 100%; background: #fff; }
+
+/* ── 모달 ── */
+.modal-btns { display: flex; gap: 10px; margin-top: 16px; }
+.modal-btns button {
+  flex: 1; padding: 12px; border-radius: 10px; border: none;
+  font-size: .85rem; font-weight: 700; cursor: pointer; font-family: inherit;
+  background: rgba(255,255,255,.08); color: var(--txt-dim);
+}
+#bible-modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.72); z-index: 200;
+  align-items: flex-end; justify-content: center;
+}
+#bible-modal-overlay.open { display: flex; }
+#bible-modal-box {
+  background: var(--navy); border: 1px solid rgba(154,123,53,.45);
+  border-radius: 22px 22px 0 0;
+  padding: 22px 18px calc(22px + var(--safe-bot));
+  width: 100%; max-width: 480px; max-height: 85vh; overflow-y: auto;
+}
+#bible-modal-box h2 { font-size: .92rem; color: var(--gold-ltr); margin-bottom: 6px; text-align: center; }
+.bible-modal-desc { font-size: .68rem; color: var(--txt-dim); line-height: 1.6; text-align: center; margin-bottom: 16px; }
+.bible-ver-card { background: rgba(0,0,0,.2); border: 1px solid rgba(154,123,53,.2); border-radius: 12px; padding: 14px; margin-bottom: 10px; }
+.bvc-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.bvc-name { font-size: .85rem; font-weight: 700; color: var(--cream); }
+.bvc-status { font-size: .64rem; font-weight: 700; padding: 3px 9px; border-radius: 10px; background: rgba(154,123,53,.15); color: var(--txt-dim); border: 1px solid rgba(154,123,53,.25); white-space: nowrap; }
+.bvc-status.ok { background: rgba(74,155,111,.18); color: #7bd1a3; border-color: rgba(74,155,111,.35); }
+.bvc-info { font-size: .66rem; color: var(--txt-dim); margin-bottom: 10px; min-height: 1em; }
+.bvc-btns { display: flex; gap: 8px; }
+.bvc-btns label, .bvc-btns button { flex: 1; padding: 9px; border-radius: 8px; border: 1px solid rgba(154,123,53,.35); background: rgba(154,123,53,.15); color: var(--gold-ltr); font-size: .76rem; font-weight: 700; cursor: pointer; font-family: inherit; text-align: center; display: block; }
+.bvc-btns .bvc-remove { background: rgba(220,60,60,.12); color: #f87171; border-color: rgba(220,60,60,.3); flex: 0 0 64px; }
+</style>
+</head>
+<body>
+
+<!-- ── 헤더 ── -->
+<header>
+  <div class="header-top">
+    <div>
+      <span class="logo-cross">✝</span>
+      <div class="logo-title">오늘의 말씀</div>
+      <div class="logo-sub">은혜가풍성한교회</div>
+    </div>
+  </div>
+  <div id="hymn-player">
+    <button id="hymn-play-btn" onclick="hymnToggle()">▶</button>
+    <div style="flex:1;min-width:0;">
+      <div id="hymn-track-name">🎵 📂 눌러 찬송 파일 선택 (한 번만)</div>
+      <div id="hymn-progress-wrap" onclick="hymnSeek(event)">
+        <div id="hymn-progress-bar"></div>
+      </div>
+    </div>
+    <button id="hymn-vol-btn" onclick="hymnToggleMute()">🔊</button>
+    <label id="hymn-file-label" for="hymn-file-input" title="찬송 파일 선택/변경">📂</label>
+    <input type="file" id="hymn-file-input" accept="audio/*" multiple style="display:none" onchange="hymnLoadFiles(event)">
+  </div>
+</header>
+
+<!-- ── 콘텐츠 영역 ── -->
+<div id="content-area">
+  <div id="home-panel">
+    <main>
+      <button class="menu-btn" onclick="openPage('매일성경_v13.html')">
+        <span class="menu-badge ready">바로가기</span>
+        <div class="menu-icon">📖</div>
+        <div class="menu-body">
+          <div class="menu-title">큐티 (QT)</div>
+          <div class="menu-desc">매일성경 / 생명의 삶 본문, 오늘의 해설,<br>본문해석, 오늘 묵상</div>
+        </div>
+      </button>
+      <button class="menu-btn" onclick="openPage('성경묵상암송카드2.html')">
+        <span class="menu-badge ready">바로가기</span>
+        <div class="menu-icon">🧠</div>
+        <div class="menu-body">
+          <div class="menu-title">성경암송</div>
+          <div class="menu-desc">묵상·암송카드로 구절을 선택해<br>반복 암송 훈련을 할 수 있습니다</div>
+        </div>
+      </button>
+      <button class="menu-btn" onclick="openPage('성경통독.html')">
+        <span class="menu-badge ready">바로가기</span>
+        <div class="menu-icon">📚</div>
+        <div class="menu-body">
+          <div class="menu-title">성경통독</div>
+          <div class="menu-desc">매일성경 일년일독 스케줄에 따라<br>성경 전체를 읽어가는 통독 기능</div>
+        </div>
+      </button>
+      <button class="menu-btn" onclick="openPage('navigators_refined.html')">
+        <span class="menu-badge ready">바로가기</span>
+        <div class="menu-icon">✝️</div>
+        <div class="menu-body">
+          <div class="menu-title">네비게이토 암송</div>
+          <div class="menu-desc">네비게이토 180구절 주제별 암송카드<br>완료·모름 체크로 반복 훈련</div>
+        </div>
+      </button>
+    </main>
+    <div class="footer-note">각 기능의 ⚙️ 설정에서 성경 JSON 파일을 등록하세요.</div>
+  </div>
+
+  <div id="iframe-panel">
+    <iframe id="content-iframe" src="about:blank"></iframe>
+  </div>
+</div>
+
+<!-- ── 재생기2: 미니 플레이어 ── -->
+<div id="mini-player">
+  <div class="mp-top">
+    <div id="mp-track-name">🎵 아래 슬롯을 눌러 음원을 올리세요 (최대 3곡)</div>
+    <div class="mp-controls">
+      <button class="mp-btn" onclick="mpPrev()">⏮</button>
+      <button id="mp-play-btn" onclick="mpToggle()">▶</button>
+      <button class="mp-btn" onclick="mpNext()">⏭</button>
+    </div>
+  </div>
+  <div class="mp-progress-wrap" onclick="mpSeek(event)">
+    <div class="mp-progress-bar" id="mp-progress-bar"></div>
+  </div>
+  <div class="mp-slots">
+    <div class="mp-slot" id="mp-slot-0" onclick="mpSlotClick(0)">+ 곡 1<span class="mp-slot-del" onclick="mpSlotDel(event,0)">✕</span></div>
+    <div class="mp-slot" id="mp-slot-1" onclick="mpSlotClick(1)">+ 곡 2<span class="mp-slot-del" onclick="mpSlotDel(event,1)">✕</span></div>
+    <div class="mp-slot" id="mp-slot-2" onclick="mpSlotClick(2)">+ 곡 3<span class="mp-slot-del" onclick="mpSlotDel(event,2)">✕</span></div>
+    <input type="file" id="mp-file-input" accept="audio/*" style="display:none" onchange="mpFileLoaded(event)">
+  </div>
+  <div class="mp-bottom">
+    <button class="mp-repeat-btn" id="mp-repeat-btn" onclick="mpToggleRepeat()">🔁 반복 꺼짐</button>
+    <div class="mp-time" id="mp-time">0:00 / 0:00</div>
+  </div>
+</div>
+
+<!-- ── 성경 데이터 관리 모달 ── -->
+<div id="bible-modal-overlay" onclick="bibleOverlayClick(event)">
+  <div id="bible-modal-box">
+    <h2>📂 성경 데이터 관리</h2>
+    <div class="bible-modal-desc">
+      성경 본문 JSON 파일을 한 번 올려두면<br>
+      큐티(QT)·성경암송·성경통독에서 모두 같은 데이터를 사용합니다.
+    </div>
+    <div class="bible-ver-card">
+      <div class="bvc-top"><span class="bvc-name">📗 개역개정</span><span class="bvc-status" id="bvc-status-개역개정">미등록</span></div>
+      <div class="bvc-info" id="bvc-info-개역개정"></div>
+      <div class="bvc-btns">
+        <label for="bvc-file-개역개정">📂 파일 선택 (.json)</label>
+        <input type="file" id="bvc-file-개역개정" accept=".json" style="display:none" onchange="onBibleFileSelect(event,'개역개정')">
+        <button class="bvc-remove" onclick="removeBibleVersion('개역개정')">삭제</button>
+      </div>
+    </div>
+    <div class="bible-ver-card">
+      <div class="bvc-top"><span class="bvc-name">📘 우리말성경</span><span class="bvc-status" id="bvc-status-우리말성경">미등록</span></div>
+      <div class="bvc-info" id="bvc-info-우리말성경"></div>
+      <div class="bvc-btns">
+        <label for="bvc-file-우리말성경">📂 파일 선택 (.json)</label>
+        <input type="file" id="bvc-file-우리말성경" accept=".json" style="display:none" onchange="onBibleFileSelect(event,'우리말성경')">
+        <button class="bvc-remove" onclick="removeBibleVersion('우리말성경')">삭제</button>
+      </div>
+    </div>
+    <div class="bible-ver-card">
+      <div class="bvc-top"><span class="bvc-name">📙 NIV (영어)</span><span class="bvc-status" id="bvc-status-NIV">미등록</span></div>
+      <div class="bvc-info" id="bvc-info-NIV"></div>
+      <div class="bvc-btns">
+        <label for="bvc-file-NIV">📂 파일 선택 (.json)</label>
+        <input type="file" id="bvc-file-NIV" accept=".json" style="display:none" onchange="onBibleFileSelect(event,'NIV')">
+        <button class="bvc-remove" onclick="removeBibleVersion('NIV')">삭제</button>
+      </div>
+    </div>
+    <div class="modal-btns"><button onclick="closeBibleModal()">닫기</button></div>
+  </div>
+</div>
+
+<script src="bible-db.js"></script>
+<script>
+/* ════════════════════════════════════
+   AudioDB — 음원을 IndexedDB에 저장/로드
+   ════════════════════════════════════ */
+const AudioDB = (() => {
+  const DB_NAME = 'AudioStore';
+  const DB_VER  = 1;
+  let _db = null;
+
+  function open() {
+    if (_db) return Promise.resolve(_db);
+    return new Promise((res, rej) => {
+      const req = indexedDB.open(DB_NAME, DB_VER);
+      req.onupgradeneeded = e => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('tracks')) {
+          db.createObjectStore('tracks', { keyPath: 'key' });
+        }
+      };
+      req.onsuccess = e => { _db = e.target.result; res(_db); };
+      req.onerror   = e => rej(e.target.error);
+    });
+  }
+
+  async function save(key, file) {
+    const db = await open();
+    const buf = await file.arrayBuffer();
+    return new Promise((res, rej) => {
+      const tx = db.transaction('tracks', 'readwrite');
+      tx.objectStore('tracks').put({ key, name: file.name, type: file.type, buf });
+      tx.oncomplete = () => res();
+      tx.onerror    = e => rej(e.target.error);
+    });
+  }
+
+  async function load(key) {
+    const db = await open();
+    return new Promise((res, rej) => {
+      const tx  = db.transaction('tracks', 'readonly');
+      const req = tx.objectStore('tracks').get(key);
+      req.onsuccess = e => res(e.target.result || null);
+      req.onerror   = e => rej(e.target.error);
+    });
+  }
+
+  async function remove(key) {
+    const db = await open();
+    return new Promise((res, rej) => {
+      const tx = db.transaction('tracks', 'readwrite');
+      tx.objectStore('tracks').delete(key);
+      tx.oncomplete = () => res();
+      tx.onerror    = e => rej(e.target.error);
+    });
+  }
+
+  async function keys() {
+    const db = await open();
+    return new Promise((res, rej) => {
+      const tx  = db.transaction('tracks', 'readonly');
+      const req = tx.objectStore('tracks').getAllKeys();
+      req.onsuccess = e => res(e.target.result);
+      req.onerror   = e => rej(e.target.error);
+    });
+  }
+
+  function toObjectURL(record) {
+    const blob = new Blob([record.buf], { type: record.type || 'audio/mpeg' });
+    return { url: URL.createObjectURL(blob), name: record.name.replace(/\.[^.]+$/, '') };
+  }
+
+  return { save, load, remove, keys, toObjectURL };
+})();
+
+/* ════════════════════════════════════
+   재생기1 — 찬송 플레이어 (헤더, 자동재생)
+   키: hymn_0, hymn_1, hymn_2 ...
+   ════════════════════════════════════ */
+const hymnAudio = new Audio();
+hymnAudio.volume = 0.45;
+let hymnTracks = [];   // { url, name }
+let hymnIndex  = 0;
+let hymnMuted  = false;
+let hymnObjectURLs = [];
+
+async function hymnInit() {
+  // IndexedDB에서 저장된 찬송 로드
+  try {
+    const allKeys = (await AudioDB.keys()).filter(k => k.startsWith('hymn_'));
+    allKeys.sort();
+    hymnObjectURLs.forEach(u => URL.revokeObjectURL(u));
+    hymnObjectURLs = [];
+    hymnTracks = [];
+    for (const k of allKeys) {
+      const rec = await AudioDB.load(k);
+      if (rec) {
+        const { url, name } = AudioDB.toObjectURL(rec);
+        hymnTracks.push({ url, name });
+        hymnObjectURLs.push(url);
+      }
+    }
+    if (hymnTracks.length) {
+      hymnIndex = 0;
+      hymnSetTrack(0);
+      // 자동재생 시도 (브라우저 정책상 사용자 인터랙션 후 허용)
+      hymnAudio.play().catch(() => {
+        // 자동재생 차단된 경우 버튼만 준비 상태로
+        document.getElementById('hymn-play-btn').textContent = '▶';
+      });
+    }
+  } catch(e) { console.warn('찬송 로드 실패', e); }
+}
+
+async function hymnLoadFiles(e) {
+  const files = Array.from(e.target.files).filter(
+    f => f.type.startsWith('audio/') || /\.(mp3|m4a|aac|ogg|wav|flac)$/i.test(f.name)
+  );
+  if (!files.length) { alert('재생 가능한 오디오 파일이 없습니다.'); return; }
+  // 기존 찬송 삭제
+  const oldKeys = (await AudioDB.keys()).filter(k => k.startsWith('hymn_'));
+  for (const k of oldKeys) await AudioDB.remove(k);
+  // 새 파일 저장
+  for (let i = 0; i < files.length; i++) {
+    await AudioDB.save('hymn_' + String(i).padStart(3,'0'), files[i]);
+  }
+  await hymnInit();
+}
+
+function hymnSetTrack(idx) {
+  if (!hymnTracks.length) return;
+  hymnAudio.src = hymnTracks[idx].url;
+  document.getElementById('hymn-track-name').textContent = '🎵 ' + hymnTracks[idx].name;
+}
+
+hymnAudio.addEventListener('ended', () => {
+  hymnIndex = (hymnIndex + 1) % hymnTracks.length;
+  hymnSetTrack(hymnIndex);
+  hymnAudio.play().catch(() => {});
+});
+
+hymnAudio.addEventListener('play',  () => { document.getElementById('hymn-play-btn').textContent = '⏸'; });
+hymnAudio.addEventListener('pause', () => { document.getElementById('hymn-play-btn').textContent = '▶'; });
+
+hymnAudio.addEventListener('timeupdate', () => {
+  if (!hymnAudio.duration) return;
+  document.getElementById('hymn-progress-bar').style.width =
+    (hymnAudio.currentTime / hymnAudio.duration * 100) + '%';
+});
+
+function hymnToggle() {
+  if (!hymnTracks.length) { document.getElementById('hymn-file-input').click(); return; }
+  hymnAudio.paused ? hymnAudio.play() : hymnAudio.pause();
+}
+function hymnToggleMute() {
+  hymnMuted = !hymnMuted;
+  hymnAudio.muted = hymnMuted;
+  document.getElementById('hymn-vol-btn').textContent = hymnMuted ? '🔇' : '🔊';
+}
+function hymnSeek(e) {
+  if (!hymnAudio.duration) return;
+  hymnAudio.currentTime = (e.offsetX / e.currentTarget.offsetWidth) * hymnAudio.duration;
+}
+
+/* ════════════════════════════════════
+   재생기2 — 미니 커스텀 플레이어 (하단)
+   키: mini_0, mini_1, mini_2
+   ════════════════════════════════════ */
+const mpAudio  = new Audio();
+let mpSlots    = [null, null, null];  // { url, name }
+let mpSlotURLs = [null, null, null];
+let mpCurrent  = -1;
+let mpRepeat   = false;
+let mpPending  = -1;
+
+async function mpInit() {
+  for (let i = 0; i < 3; i++) {
+    try {
+      const rec = await AudioDB.load('mini_' + i);
+      if (rec) {
+        if (mpSlotURLs[i]) URL.revokeObjectURL(mpSlotURLs[i]);
+        const { url, name } = AudioDB.toObjectURL(rec);
+        mpSlots[i]    = { url, name };
+        mpSlotURLs[i] = url;
+        const el = document.getElementById('mp-slot-' + i);
+        el.childNodes[0].textContent = name;
+        el.classList.add('loaded');
+      }
+    } catch(e) {}
+  }
+  // 첫 번째 로드된 슬롯 준비
+  const first = mpSlots.findIndex(s => s);
+  if (first >= 0) {
+    mpCurrent = first;
+    document.getElementById('mp-track-name').textContent = '🎵 ' + mpSlots[first].name;
+  }
+}
+
+function mpSlotClick(idx) {
+  if (mpSlots[idx]) {
+    mpPlayAt(idx);
+  } else {
+    mpPending = idx;
+    document.getElementById('mp-file-input').value = '';
+    document.getElementById('mp-file-input').click();
+  }
+}
+
+async function mpFileLoaded(e) {
+  const file = e.target.files[0];
+  if (!file || mpPending < 0) return;
+  await AudioDB.save('mini_' + mpPending, file);
+  if (mpSlotURLs[mpPending]) URL.revokeObjectURL(mpSlotURLs[mpPending]);
+  const { url, name } = AudioDB.toObjectURL({ buf: await file.arrayBuffer(), type: file.type, name: file.name });
+  // 위에서 arrayBuffer 소비됐으므로 다시 DB에서 로드
+  const rec = await AudioDB.load('mini_' + mpPending);
+  const result = AudioDB.toObjectURL(rec);
+  mpSlots[mpPending]    = { url: result.url, name: result.name };
+  mpSlotURLs[mpPending] = result.url;
+  const el = document.getElementById('mp-slot-' + mpPending);
+  el.childNodes[0].textContent = result.name;
+  el.classList.add('loaded');
+  el.classList.remove('playing');
+  mpPending = -1;
+}
+
+async function mpSlotDel(e, idx) {
+  e.stopPropagation();
+  if (mpCurrent === idx) { mpAudio.pause(); mpCurrent = -1; }
+  if (mpSlotURLs[idx]) { URL.revokeObjectURL(mpSlotURLs[idx]); mpSlotURLs[idx] = null; }
+  mpSlots[idx] = null;
+  await AudioDB.remove('mini_' + idx);
+  const el = document.getElementById('mp-slot-' + idx);
+  el.childNodes[0].textContent = '+ 곡 ' + (idx + 1);
+  el.classList.remove('loaded', 'playing');
+  document.getElementById('mp-track-name').textContent = '🎵 아래 슬롯을 눌러 음원을 올리세요';
+  document.getElementById('mp-play-btn').textContent = '▶';
+}
+
+function mpPlayAt(idx) {
+  if (!mpSlots[idx]) return;
+  for (let i = 0; i < 3; i++) {
+    document.getElementById('mp-slot-' + i).classList.remove('playing');
+  }
+  mpCurrent = idx;
+  mpAudio.src = mpSlots[idx].url;
+  mpAudio.play().catch(() => {});
+  document.getElementById('mp-slot-' + idx).classList.add('playing');
+  document.getElementById('mp-track-name').textContent = '🎵 ' + mpSlots[idx].name;
+}
+
+mpAudio.addEventListener('play',  () => { document.getElementById('mp-play-btn').textContent = '⏸'; });
+mpAudio.addEventListener('pause', () => { document.getElementById('mp-play-btn').textContent = '▶'; });
+
+mpAudio.addEventListener('ended', () => {
+  // 다음 로드된 슬롯 탐색
+  for (let i = 1; i <= 3; i++) {
+    const next = (mpCurrent + i) % 3;
+    if (mpSlots[next]) {
+      // 반복 꺼짐이면 인덱스가 작아지는 순환(끝→처음)은 막음
+      if (!mpRepeat && next <= mpCurrent) break;
+      mpPlayAt(next); return;
+    }
+  }
+  // 반복 켜짐이면 처음부터
+  if (mpRepeat) {
+    const first = mpSlots.findIndex(s => s);
+    if (first >= 0) { mpPlayAt(first); return; }
+  }
+  document.getElementById('mp-play-btn').textContent = '▶';
+  document.getElementById('mp-slot-' + mpCurrent)?.classList.remove('playing');
+});
+
+mpAudio.addEventListener('timeupdate', () => {
+  if (!mpAudio.duration) return;
+  document.getElementById('mp-progress-bar').style.width =
+    (mpAudio.currentTime / mpAudio.duration * 100) + '%';
+  document.getElementById('mp-time').textContent =
+    fmtTime(mpAudio.currentTime) + ' / ' + fmtTime(mpAudio.duration);
+});
+
+function mpToggle() {
+  if (mpCurrent < 0) {
+    const first = mpSlots.findIndex(s => s);
+    if (first >= 0) mpPlayAt(first);
+    return;
+  }
+  mpAudio.paused ? mpAudio.play() : mpAudio.pause();
+}
+function mpPrev() {
+  if (mpCurrent < 0) return;
+  for (let i = 1; i <= 3; i++) {
+    const c = (mpCurrent - i + 3) % 3;
+    if (mpSlots[c]) { mpPlayAt(c); return; }
+  }
+}
+function mpNext() {
+  if (mpCurrent < 0) return;
+  for (let i = 1; i <= 3; i++) {
+    const c = (mpCurrent + i) % 3;
+    if (mpSlots[c]) { mpPlayAt(c); return; }
+  }
+}
+function mpSeek(e) {
+  if (!mpAudio.duration) return;
+  mpAudio.currentTime = (e.offsetX / e.currentTarget.offsetWidth) * mpAudio.duration;
+}
+function mpToggleRepeat() {
+  mpRepeat = !mpRepeat;
+  const btn = document.getElementById('mp-repeat-btn');
+  btn.textContent = mpRepeat ? '🔁 반복 켜짐' : '🔁 반복 꺼짐';
+  btn.classList.toggle('on', mpRepeat);
+}
+
+function fmtTime(s) {
+  if (!isFinite(s)) return '0:00';
+  return Math.floor(s/60) + ':' + String(Math.floor(s%60)).padStart(2,'0');
+}
+
+/* ════════════════════════════════════
+   페이지 전환
+   ════════════════════════════════════ */
+function openPage(url) {
+  document.getElementById('home-panel').style.display  = 'none';
+  document.getElementById('iframe-panel').classList.add('active');
+  const iframe = document.getElementById('content-iframe');
+  // src를 직접 바꾸면 브라우저가 별도의 히스토리 기록을 하나 더 만들어
+  // 뒤로가기를 두 번 눌러야 하는 문제가 생긴다. location.replace()는
+  // 기존 기록을 덮어써서 새 기록을 추가하지 않으므로 이를 방지한다.
+  try {
+    iframe.contentWindow.location.replace(url);
+  } catch (e) {
+    iframe.src = url; // 접근이 막히는 예외 상황 대비 폴백
+  }
+  document.querySelector('header').style.display = 'none';
+  document.getElementById('mini-player').style.display = 'none';
+  // 뒤로가기(물리버튼) 대응: 히스토리에 현재 상태를 쌓아둔다
+  history.pushState({ page: 'sub' }, '', '');
+}
+function goHome(skipHistory) {
+  document.getElementById('iframe-panel').classList.remove('active');
+  document.getElementById('home-panel').style.display = 'flex';
+  const iframe = document.getElementById('content-iframe');
+  try {
+    iframe.contentWindow.location.replace('about:blank');
+  } catch (e) {
+    iframe.src = 'about:blank';
+  }
+  document.querySelector('header').style.display = '';
+  document.getElementById('mini-player').style.display = '';
+  // 홈 버튼을 눌러서 온 경우엔 쌓아둔 히스토리를 되돌려준다
+  if (!skipHistory && history.state && history.state.page === 'sub') {
+    history.back();
+  }
+}
+window.addEventListener('message', function(e) {
+  if (e.data === 'GO_HOME') { goHome(); return; }
+  if (e.data && e.data.action === 'goHome') { goHome(); return; }
+});
+// 물리 뒤로가기(안드로이드 back / 브라우저 뒤로가기 제스처) 대응
+window.addEventListener('popstate', function() {
+  const iframePanel = document.getElementById('iframe-panel');
+  if (iframePanel.classList.contains('active')) {
+    goHome(true); // 이미 뒤로가기로 발생한 것이므로 history.back()을 다시 호출하지 않음
+  }
+});
+
+function comingSoon(name) { alert(name + ' 기능은 준비 중입니다. 곧 만나요! 🙏'); }
+
+/* ════════════════════════════════════
+   성경 데이터 관리
+   ════════════════════════════════════ */
+const BIBLE_VERSION_IDS = ['개역개정','우리말성경','NIV'];
+function openBibleModal()  { refreshBibleStatus(); document.getElementById('bible-modal-overlay').classList.add('open'); }
+function closeBibleModal() { document.getElementById('bible-modal-overlay').classList.remove('open'); }
+function bibleOverlayClick(e) { if (e.target === document.getElementById('bible-modal-overlay')) closeBibleModal(); }
+
+async function refreshBibleStatus() {
+  for (const id of BIBLE_VERSION_IDS) {
+    const statusEl = document.getElementById('bvc-status-' + id);
+    const infoEl   = document.getElementById('bvc-info-' + id);
+    try {
+      const m = await BibleDB.meta(id);
+      if (m) {
+        statusEl.textContent = '✓ 등록됨'; statusEl.className = 'bvc-status ok';
+        const d = new Date(m.savedAt);
+        infoEl.textContent = (m.fileName||'') + ' · ' + (m.verseCount||0) + '절 · '
+          + d.getFullYear()+'.'+(d.getMonth()+1)+'.'+d.getDate()+' 저장';
+      } else { statusEl.textContent='미등록'; statusEl.className='bvc-status'; infoEl.textContent=''; }
+    } catch(e) { statusEl.textContent='미등록'; statusEl.className='bvc-status'; infoEl.textContent=''; }
+  }
+}
+function onBibleFileSelect(event, verId) {
+  const file = event.target.files[0]; if (!file) return;
+  const statusEl = document.getElementById('bvc-status-'+verId);
+  const infoEl   = document.getElementById('bvc-info-'+verId);
+  statusEl.textContent='읽는 중...'; statusEl.className='bvc-status'; infoEl.textContent='';
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    let db;
+    try {
+      db = JSON.parse(e.target.result);
+      if (!db.verses||!db.bookNames) throw new Error('지원하지 않는 형식입니다');
+    } catch(err) { statusEl.textContent='✗ 오류'; statusEl.className='bvc-status'; infoEl.textContent=err.message; return; }
+    try {
+      await BibleDB.save(verId, db, { fileName: file.name, label: verId });
+      await refreshBibleStatus();
+    } catch(err) { statusEl.textContent='✗ 저장 오류'; infoEl.textContent=err.message; }
+  };
+  reader.onerror = () => { statusEl.textContent='✗ 읽기 실패'; statusEl.className='bvc-status'; };
+  reader.readAsText(file, 'UTF-8');
+}
+async function removeBibleVersion(verId) {
+  if (!confirm(verId+' 데이터를 삭제하시겠습니까?')) return;
+  await BibleDB.remove(verId); await refreshBibleStatus();
+}
+
+/* ── 초기화 ── */
+refreshBibleStatus();
+hymnInit();
+mpInit();
+</script>
+</body>
+</html>
