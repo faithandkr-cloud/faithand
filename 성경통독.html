@@ -602,17 +602,17 @@ header {
       <button class="s-del-btn" onclick="deleteBible('NIV')">삭제</button>
     </div>
 
-    <!-- 낭독 음원 폴더 -->
-    <div class="s-section-title">🎧 낭독 mp3 폴더</div>
-    <div class="s-desc" style="margin-bottom:12px;line-height:1.6;">성경낭송_PRS 폴더를 지정하면<br>낭독 시 자동으로 mp3를 찾아 재생합니다.</div>
+    <!-- 낭독 음원 zip -->
+    <div class="s-section-title">🎧 낭독 mp3 zip</div>
+    <div class="s-desc" style="margin-bottom:12px;line-height:1.6;">성경낭송_PRS.zip 파일을 선택하면<br>낭독 시 자동으로 mp3를 찾아 재생합니다.<br>(zip은 반드시 무압축(store) 방식으로 생성)</div>
     <div class="s-file-row">
       <div class="s-file-label">
-        <span>📁 음원 폴더</span>
+        <span>📦 음원 zip</span>
         <span class="s-file-badge unset" id="audio-folder-status">미설정</span>
       </div>
-      <label class="s-upload-btn" for="audio-folder-input" style="cursor:pointer;">폴더 선택</label>
-      <input type="file" id="audio-folder-input" webkitdirectory multiple style="display:none" onchange="pickAudioFolder(event)">
-      <button class="s-del-btn" onclick="clearAudioFolder()">해제</button>
+      <label class="s-upload-btn" for="audio-folder-input" style="cursor:pointer;">zip 선택</label>
+      <input type="file" id="audio-folder-input" accept=".zip" style="display:none" onchange="pickAudioZip(event)">
+      <button class="s-del-btn" onclick="clearAudioZip()">해제</button>
     </div>
 
     <!-- 구분선 -->
@@ -1166,24 +1166,27 @@ function showToast(msg) {
 }
 function openModal() {
   refreshBibleDataStatus(false);
-  restoreAudioFolderHandle();
+  restoreAudioZip();
   document.getElementById('modal-overlay').classList.add('open');
 }
 function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
 function overlayClick(e){if(e.target===document.getElementById('modal-overlay'))closeModal();}
 
 /* ══════════════════════════════
-   낭독 mp3 폴더 (Android WebView 호환 방식)
-   ─ File System Access API(showDirectoryPicker)는 Android WebView에서
-     지원되지 않으므로 <input type="file" webkitdirectory> 로 대체.
-   ─ 선택된 File 객체들을 IndexedDB에 통째로 저장해 다음 실행 시 재사용.
+   낭독 mp3 zip (Android 호환 방식)
+   ─ zip은 무압축(store) 모드로 생성되어 있어야 함.
+   ─ zip 파일 자체는 통째로 IndexedDB에 저장(File 객체 그대로 저장 가능).
+   ─ 재생 시에는 중앙 디렉토리에서 위치를 찾아 Blob.slice()로
+     필요한 mp3 하나만 잘라내 재생 — zip 전체를 압축 해제하거나
+     메모리에 올리지 않음.
 ══════════════════════════════ */
-let audioFilesLoaded = false;   // 폴더(파일 목록)가 로드되었는지 여부
-let audioFolderName  = '';      // 표시용 폴더 이름
+let audioFilesLoaded = false;   // zip이 로드되었는지 여부
+let audioFolderName  = '';      // 표시용 zip 파일 이름
+let _prsZipFile = null;         // 선택된 zip File 객체 (재생 시 slice 대상)
 
 function _audioFolderDB() {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open('AudioFolderDB', 2);
+    const req = indexedDB.open('AudioFolderDB', 3);
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains('files')) db.createObjectStore('files');
@@ -1193,31 +1196,31 @@ function _audioFolderDB() {
   });
 }
 
-async function _saveAudioFiles(fileList) {
+async function _saveZipFile(file) {
   const db = await _audioFolderDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction('files', 'readwrite');
-    tx.objectStore('files').put(fileList, 'prsFiles'); // File 객체 배열 그대로 저장 가능
+    tx.objectStore('files').put(file, 'prsZipFile'); // File 객체 그대로 저장 (통째로 재로드 안 함)
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
 }
 
-async function _loadAudioFiles() {
+async function _loadZipFile() {
   const db = await _audioFolderDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction('files', 'readonly');
-    const req = tx.objectStore('files').get('prsFiles');
+    const req = tx.objectStore('files').get('prsZipFile');
     req.onsuccess = () => resolve(req.result || null);
     req.onerror = () => reject(req.error);
   });
 }
 
-async function _deleteAudioFiles() {
+async function _deleteZipFile() {
   const db = await _audioFolderDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction('files', 'readwrite');
-    tx.objectStore('files').delete('prsFiles');
+    tx.objectStore('files').delete('prsZipFile');
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
@@ -1230,11 +1233,107 @@ function _setAudioFolderStatus(text, ok) {
   el.className = ok ? 's-file-badge' : 's-file-badge unset';
 }
 
-/* 선택된 파일 목록(webkitRelativePath 포함)으로 "책 폴더명 → {장번호: File}" 인덱스 구축 */
-function _buildPrsIndex(files) {
+/* ── 경량 ZIP 중앙 디렉토리 리더 ──
+   store(무압축) 모드 zip 전용. 압축 해제 없이 각 mp3의 파일 내 위치(offset·size)만
+   찾아낸다. 8.9GB처럼 4GB를 넘는 zip은 ZIP64 형식이 되므로 이를 함께 처리한다. */
+const _ZIP_EOCD_SIG = 0x06054b50;
+const _ZIP64_LOC_SIG = 0x07064b50;
+const _ZIP64_EOCD_SIG = 0x06064b50;
+const _ZIP_CEN_SIG = 0x02014b50;
+
+function _zipReadUint64(dv, offset) {
+  const low  = dv.getUint32(offset, true);
+  const high = dv.getUint32(offset + 4, true);
+  return high * 0x100000000 + low;
+}
+
+/* zip 파일의 중앙 디렉토리를 읽어 { name, compSize, localOffset } 목록을 반환 */
+async function zipParseEntries(file) {
+  const tailLen = Math.min(file.size, 65557); // EOCD는 파일 끝 64KB 안에 존재
+  const tailBuf = await file.slice(file.size - tailLen, file.size).arrayBuffer();
+  const tdv = new DataView(tailBuf);
+
+  let eocdPos = -1;
+  for (let i = tailBuf.byteLength - 22; i >= 0; i--) {
+    if (tdv.getUint32(i, true) === _ZIP_EOCD_SIG) { eocdPos = i; break; }
+  }
+  if (eocdPos === -1) throw new Error('zip 파일을 인식할 수 없습니다 (EOCD 없음)');
+
+  let cdOffset   = tdv.getUint32(eocdPos + 16, true);
+  let cdSize     = tdv.getUint32(eocdPos + 12, true);
+  let entryCount = tdv.getUint16(eocdPos + 10, true);
+
+  // 4GB를 넘는 zip은 ZIP64 EOCD를 별도로 읽어야 함
+  if (cdOffset === 0xffffffff || cdSize === 0xffffffff || entryCount === 0xffff) {
+    const locPos = eocdPos - 20;
+    if (locPos < 0 || tdv.getUint32(locPos, true) !== _ZIP64_LOC_SIG) {
+      throw new Error('ZIP64 정보를 찾을 수 없습니다');
+    }
+    const zip64EocdOffset = _zipReadUint64(tdv, locPos + 8);
+    const z64buf = await file.slice(zip64EocdOffset, zip64EocdOffset + 56).arrayBuffer();
+    const zdv = new DataView(z64buf);
+    if (zdv.getUint32(0, true) !== _ZIP64_EOCD_SIG) throw new Error('ZIP64 EOCD 서명 불일치');
+    entryCount = _zipReadUint64(zdv, 32);
+    cdSize     = _zipReadUint64(zdv, 40);
+    cdOffset   = _zipReadUint64(zdv, 48);
+  }
+
+  const cdBuf = await file.slice(cdOffset, cdOffset + cdSize).arrayBuffer();
+  const cdv = new DataView(cdBuf);
+  const decoder = new TextDecoder('utf-8');
+
+  const entries = [];
+  let p = 0;
+  for (let i = 0; i < entryCount && p + 46 <= cdBuf.byteLength; i++) {
+    if (cdv.getUint32(p, true) !== _ZIP_CEN_SIG) break;
+    let compSize     = cdv.getUint32(p + 20, true);
+    let uncompSize   = cdv.getUint32(p + 24, true);
+    const fnLen      = cdv.getUint16(p + 28, true);
+    const extraLen   = cdv.getUint16(p + 30, true);
+    const commentLen = cdv.getUint16(p + 32, true);
+    let localOffset  = cdv.getUint32(p + 42, true);
+
+    const nameBytes = new Uint8Array(cdBuf, p + 46, fnLen);
+    const name = decoder.decode(nameBytes).normalize('NFC');
+
+    if (compSize === 0xffffffff || uncompSize === 0xffffffff || localOffset === 0xffffffff) {
+      let ep = p + 46 + fnLen;
+      const extraEnd = ep + extraLen;
+      while (ep + 4 <= extraEnd) {
+        const tag  = cdv.getUint16(ep, true);
+        const size = cdv.getUint16(ep + 2, true);
+        if (tag === 0x0001) {
+          let q = ep + 4;
+          if (uncompSize   === 0xffffffff) { uncompSize   = _zipReadUint64(cdv, q); q += 8; }
+          if (compSize     === 0xffffffff) { compSize     = _zipReadUint64(cdv, q); q += 8; }
+          if (localOffset  === 0xffffffff) { localOffset  = _zipReadUint64(cdv, q); q += 8; }
+        }
+        ep += 4 + size;
+      }
+    }
+
+    entries.push({ name, compSize, localOffset });
+    p += 46 + fnLen + extraLen + commentLen;
+  }
+  return entries;
+}
+
+/* 로컬 헤더를 읽어 실제 데이터 시작 위치를 계산한 뒤, 그 mp3 하나만 Blob으로 잘라 반환 */
+async function zipGetEntryBlob(file, entry, mimeType) {
+  const headBuf = await file.slice(entry.localOffset, entry.localOffset + 30 + 1024).arrayBuffer();
+  const dv = new DataView(headBuf);
+  const fnLen    = dv.getUint16(26, true);
+  const extraLen = dv.getUint16(28, true);
+  const dataStart = entry.localOffset + 30 + fnLen + extraLen;
+  const dataEnd   = dataStart + entry.compSize;
+  return file.slice(dataStart, dataEnd, mimeType || 'audio/mpeg');
+}
+
+/* zip 항목 목록으로 "책 폴더명 → {장번호: entry}" 인덱스 구축 */
+function _buildPrsIndexFromZipEntries(entries) {
   _prsResetScanCache();
-  for (const file of files) {
-    const rel = file.webkitRelativePath || file.name;
+  for (const entry of entries) {
+    const rel = entry.name;
     if (!/\.mp3$/i.test(rel)) continue;
     const parts = rel.split('/');
     if (parts.length < 2) continue; // 하위 폴더 구조가 없으면 건너뜀
@@ -1250,46 +1349,59 @@ function _buildPrsIndex(files) {
       prsScanWarnings.push(`${bookFolder} ${chNum}장: 파일이 중복됨 (먼저 찾은 파일 사용)`);
       continue;
     }
-    _prsChapterCache[bookFolder][chNum] = file;
+    _prsChapterCache[bookFolder][chNum] = entry;
   }
   if (prsScanWarnings.length) console.warn('[낭독 스캔 경고]', prsScanWarnings);
 }
 
-async function pickAudioFolder(event) {
-  const files = Array.from(event.target.files || []);
-  if (!files.length) return;
+async function pickAudioZip(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  if (!/\.zip$/i.test(file.name)) {
+    alert('zip 파일을 선택해주세요.');
+    event.target.value = '';
+    return;
+  }
   try {
-    await _saveAudioFiles(files);
+    _setAudioFolderStatus('분석 중…', false);
+    const entries = await zipParseEntries(file);
+    await _saveZipFile(file);
+    _prsZipFile = file;
     audioFilesLoaded = true;
-    audioFolderName = (files[0].webkitRelativePath || '').split('/')[0] || '폴더';
-    _buildPrsIndex(files);
+    audioFolderName = file.name;
+    _buildPrsIndexFromZipEntries(entries);
     _setAudioFolderStatus('✓ ' + audioFolderName, true);
-    showToast('✓ 음원 폴더 연결됨: ' + audioFolderName);
+    showToast(`✓ 음원 zip 연결됨: ${audioFolderName} (${entries.length}개 파일)`);
   } catch (e) {
     console.error(e);
-    alert('폴더 저장 중 오류: ' + e.message);
+    alert('zip 분석 중 오류: ' + e.message);
+    _setAudioFolderStatus('미설정', false);
   } finally {
-    event.target.value = ''; // 같은 폴더 재선택 가능하도록 초기화
+    event.target.value = ''; // 같은 zip 재선택 가능하도록 초기화
   }
 }
 
-async function clearAudioFolder() {
-  if (!confirm('연결된 음원 폴더 설정을 해제할까요?')) return;
-  await _deleteAudioFiles();
+async function clearAudioZip() {
+  if (!confirm('연결된 음원 zip 설정을 해제할까요?')) return;
+  await _deleteZipFile();
+  _prsZipFile = null;
   audioFilesLoaded = false;
   audioFolderName = '';
   _prsResetScanCache();
   _setAudioFolderStatus('미설정', false);
-  showToast('🗑 음원 폴더 연결 해제됨');
+  showToast('🗑 음원 zip 연결 해제됨');
 }
 
-async function restoreAudioFolderHandle() {
+async function restoreAudioZip() {
   try {
-    const files = await _loadAudioFiles();
-    if (!files || !files.length) { _setAudioFolderStatus('미설정', false); return; }
+    const file = await _loadZipFile();
+    if (!file) { _setAudioFolderStatus('미설정', false); return; }
+    _setAudioFolderStatus('불러오는 중…', false);
+    const entries = await zipParseEntries(file);
+    _prsZipFile = file;
     audioFilesLoaded = true;
-    audioFolderName = (files[0].webkitRelativePath || '').split('/')[0] || '폴더';
-    _buildPrsIndex(files);
+    audioFolderName = file.name;
+    _buildPrsIndexFromZipEntries(entries);
     _setAudioFolderStatus('✓ ' + audioFolderName, true);
   } catch (e) {
     console.error(e);
@@ -1348,8 +1460,8 @@ function prsGetAudioPath(bookName, chNum) {
   return `${folder}/${fileName}`;
 }
 
-/* ── 책 폴더명 → { 장번호: File } 매핑 캐시 (webkitdirectory 선택 시 한 번에 구축됨) ── */
-const _prsChapterCache = {};   // bookFolderName -> { chNum: File }
+/* ── 책 폴더명 → { 장번호: zip entry } 매핑 캐시 (zip 선택 시 한 번에 구축됨) ── */
+const _prsChapterCache = {};   // bookFolderName -> { chNum: zipEntry }
 const prsScanWarnings  = [];   // 스캔 중 발견된 이상 항목 (중복 장번호, 인식 실패 파일 등)
 
 function _prsResetScanCache() {
@@ -1373,8 +1485,8 @@ async function prsGetAudioFile(bookName, chNum) {
   if (!folderName) return null;
   const targetName = (folderName + '_장별 구절 영상(개역개정)').normalize('NFC');
   const map = _prsChapterCache[targetName];
-  if (!map || !map[chNum]) return null;
-  return map[chNum]; // 이미 File 객체이므로 그대로 반환
+  if (!map || !map[chNum] || !_prsZipFile) return null;
+  return await zipGetEntryBlob(_prsZipFile, map[chNum], 'audio/mpeg'); // zip에서 해당 mp3만 잘라 Blob으로 반환
 }
 
 // 현재 화면에 표시된 장 목록 수집
@@ -1445,7 +1557,7 @@ function ttsToggle() {
 
 function ttsPlay() {
   if (!audioFilesLoaded) {
-    alert('먼저 설정(⚙️)에서 낭독 mp3 폴더를 지정해 주세요.');
+    alert('먼저 설정(⚙️)에서 낭독 mp3 zip을 지정해 주세요.');
     return;
   }
   ttsChapters = ttsCollectChapters();
@@ -1505,7 +1617,7 @@ renderCard();
 loadVerses();
 updateProgress();
 refreshBibleDataStatus(false);
-restoreAudioFolderHandle();
+restoreAudioZip();
 </script>
 </body>
 </html>
