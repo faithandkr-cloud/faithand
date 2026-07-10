@@ -1027,15 +1027,60 @@ async function applyEditFromRef(){
   showToast('✓ 적용되었습니다');
 }
 
-/* ── 성경 JSON 설정 ── */
-const LS_BIBLE = 'memo_bible_kjv';
+/* ── 성경 JSON 설정 (IndexedDB 저장 - localStorage는 용량(5~10MB) 제한으로
+      성경 전체 데이터를 저장하지 못해 setItem 오류가 발생하므로 IndexedDB 사용) ── */
+const IDB_BIBLE_NAME = 'memo_bible_db';
+const IDB_BIBLE_STORE = 'bible';
+const IDB_BIBLE_KEY = 'krv';
 let _bibleData = null;
+
+function idbBibleOpen(){
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(IDB_BIBLE_NAME, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if(!db.objectStoreNames.contains(IDB_BIBLE_STORE)) db.createObjectStore(IDB_BIBLE_STORE);
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function idbBibleSet(value){
+  const db = await idbBibleOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(IDB_BIBLE_STORE, 'readwrite');
+    tx.objectStore(IDB_BIBLE_STORE).put(value, IDB_BIBLE_KEY);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function idbBibleGet(){
+  const db = await idbBibleOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(IDB_BIBLE_STORE, 'readonly');
+    const req = tx.objectStore(IDB_BIBLE_STORE).get(IDB_BIBLE_KEY);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function idbBibleDelete(){
+  const db = await idbBibleOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(IDB_BIBLE_STORE, 'readwrite');
+    tx.objectStore(IDB_BIBLE_STORE).delete(IDB_BIBLE_KEY);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
 
 async function getBibleData(){
   if(_bibleData) return _bibleData;
   try {
-    const raw = localStorage.getItem(LS_BIBLE);
-    if(raw){ _bibleData = JSON.parse(raw); return _bibleData; }
+    const data = await idbBibleGet();
+    if(data){ _bibleData = data; return data; }
   } catch(e){}
   return null;
 }
@@ -1050,6 +1095,12 @@ async function uploadBibleJson(input){
     const data = JSON.parse(text);
     // 형식 정규화
     let verses = [];
+    const bookNamesMap = data.bookNames || {};
+    function getBookName(bookId){
+      const bn = bookNamesMap[String(bookId)];
+      if(!bn) return String(bookId);
+      return bn.name || bn.abbr || String(bookId);
+    }
     if(Array.isArray(data)){
       if(data[0] && data[0].text !== undefined){ verses = data; }
       else if(data[0] && data[0].chapters){
@@ -1062,10 +1113,27 @@ async function uploadBibleJson(input){
           });
         });
       }
-    } else if(data.verses){ verses = data.verses; }
+    } else if(data.verses){
+      const v = data.verses;
+      if(Array.isArray(v)){
+        verses = v;
+      } else if(typeof v === 'object'){
+        // { "책번호": { "장번호": { "절번호": "본문" } } } 형식
+        Object.keys(v).sort((a,b)=>+a-+b).forEach(bookId=>{
+          const bookName = getBookName(bookId);
+          const chapObj = v[bookId];
+          Object.keys(chapObj).sort((a,b)=>+a-+b).forEach(chapId=>{
+            const verseObj = chapObj[chapId];
+            Object.keys(verseObj).sort((a,b)=>+a-+b).forEach(verseId=>{
+              verses.push({book:bookName,chapter:+chapId,verse:+verseId,text:verseObj[verseId]});
+            });
+          });
+        });
+      }
+    }
     if(!verses.length) throw new Error('인식할 수 없는 형식입니다.');
     const norm = {verses, bookNames: data.bookNames||{}};
-    localStorage.setItem(LS_BIBLE, JSON.stringify(norm));
+    await idbBibleSet(norm);
     _bibleData = norm;
     st.textContent = '✓ '+verses.length+'절 등록됨'; st.className = 'bset-status ok';
     showToast('✓ 개역개정 등록 완료');
@@ -1075,9 +1143,9 @@ async function uploadBibleJson(input){
   input.value = '';
 }
 
-function deleteBibleJson(){
+async function deleteBibleJson(){
   if(!confirm('개역개정 데이터를 삭제할까요?')) return;
-  localStorage.removeItem(LS_BIBLE);
+  try { await idbBibleDelete(); } catch(e){}
   _bibleData = null;
   const st = document.getElementById('bset-status');
   if(st){ st.textContent = '미등록'; st.className = 'bset-status'; }

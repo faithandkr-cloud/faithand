@@ -514,7 +514,6 @@ header {
       <div class="hd-addr-divider"></div>
       <div id="tc-ver-btns">
         <button class="tc-ver-btn active" onclick="setVersion('개역개정')">개역개정</button>
-        <button class="tc-ver-btn" onclick="setVersion('우리말성경')">우리말</button>
         <button class="tc-ver-btn" onclick="setVersion('niv')">NIV</button>
       </div>
       <div class="hd-addr-divider"></div>
@@ -613,18 +612,6 @@ header {
         <input type="file" accept=".json" style="display:none" onchange="uploadBible(this,'개역개정')">
       </label>
       <button class="s-del-btn" onclick="deleteBible('개역개정')">삭제</button>
-    </div>
-
-    <div class="s-file-row">
-      <div class="s-file-label">
-        <span>📘 우리말성경</span>
-        <span class="s-file-badge unset" id="bible-status-우리말성경">미등록</span>
-      </div>
-      <label class="s-upload-btn">
-        파일 선택
-        <input type="file" accept=".json" style="display:none" onchange="uploadBible(this,'우리말성경')">
-      </label>
-      <button class="s-del-btn" onclick="deleteBible('우리말성경')">삭제</button>
     </div>
 
     <div class="s-file-row">
@@ -920,7 +907,6 @@ function setVersion(v) {
   curVersion = v;
   const match = b =>
     b.textContent.trim() === v ||
-    (v==='우리말성경' && b.textContent.trim()==='우리말') ||
     (v==='niv' && b.textContent.trim()==='NIV');
   document.querySelectorAll('.ver-btn,.hd-ver-btn,.tc-ver-btn').forEach(b =>
     b.classList.toggle('active', match(b))
@@ -932,7 +918,7 @@ function setVersion(v) {
 /* 버전 id ↔ BibleDB 저장 키 매핑 */
 function bibleDbId(version) {
   if (version === 'niv') return 'NIV';
-  return version; // '개역개정' | '우리말성경'
+  return version; // '개역개정' | 'niv'
 }
 
 async function loadVerses() {
@@ -1173,7 +1159,7 @@ async function deleteBible(verId) {
 
 /* ── 성경 데이터 상태 ── */
 async function refreshBibleDataStatus(reloadCurrent) {
-  for (const id of ['개역개정','우리말성경','NIV']) {
+  for (const id of ['개역개정','NIV']) {
     const el = document.getElementById('bible-status-'+id);
     if (!el) continue;
     try {
