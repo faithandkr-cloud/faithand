@@ -256,9 +256,22 @@ main { width: 100%; margin: 0; padding: 0; box-sizing: border-box; }
 .ai-body { padding: 18px; }
 .ai-text {
   font-size: .95rem; line-height: 1.9;
-  color: var(--txt); white-space: pre-wrap; word-break: keep-all;
+  color: var(--cream); white-space: pre-wrap; word-break: keep-all;
   text-align: left;
 }
+.ai-subtitle {
+  display: inline-block;
+  margin: 16px 0 6px;
+  padding: 3px 11px;
+  background: rgba(201,168,76,.14);
+  border-left: 3px solid var(--gold-lt);
+  border-radius: 4px;
+  color: var(--gold-ltr);
+  font-weight: 700;
+  font-size: .92rem;
+  letter-spacing: .2px;
+}
+.ai-subtitle:first-child { margin-top: 0; }
 .cache-info {
   font-size: .65rem; color: var(--txt-dim);
   padding: 6px 18px 10px; text-align: right;
@@ -856,6 +869,32 @@ const EXEGESIS_PROMPT = `당신은 보수적 개혁신앙(칼빈주의) 전통�
 - "**", "##", "*", "-" 같은 마크다운 기호나 강조 표시는 절대 쓰지 말 것
 - 위 1~4 항목의 제목만 줄을 바꿔 그대로 적고, 그 아래 본문은 자연스러운 문단으로 작성`;
 const MISTRAL_URL = "https://api.mistral.ai/v1/chat/completions";
+
+// ── AI 해설 소제목 강조 (아이콘 + 색상 구분) ──
+const COMM_SUBTITLE_ICONS = { '본문해설': '📖', '삶의 적용': '🙏' };
+const EXEG_SUBTITLE_ICONS = {
+  '역사적·문학적 배경': '🏛',
+  '본문 주해': '🔍',
+  '신학적 주제와 구속사적 위치': '✝️',
+  '해석상의 논점': '💬'
+};
+function escapeHtmlText(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+// raw 텍스트를 줄 단위로 훑어, 소제목으로 인식되는 줄은 아이콘+강조 스타일을 입혀 반환
+function formatAiText(raw, iconMap) {
+  if (!raw) return '';
+  return raw.split('\n').map(line => {
+    const trimmed = line.trim();
+    // 앞에 붙는 번호(1. / 1) / ① 등)와 뒤에 붙는 콜론 제거 후 소제목 매칭
+    const key = trimmed.replace(/^[\d①-⑩]+[.\)]\s*/, '').replace(/[:：]\s*$/, '');
+    if (key && iconMap[key]) {
+      return `<span class="ai-subtitle">${iconMap[key]} ${escapeHtmlText(key)}</span>`;
+    }
+    return escapeHtmlText(line);
+  }).join('\n');
+}
 
 // ── localStorage 헬퍼 (ai_chat_v7 키 공유) ──
 const LS = {
@@ -1690,7 +1729,7 @@ function renderCommPanel() {
       <div class="ai-body">
         <div id="aiText" class="ai-text">
           ${cached
-            ? cached.text
+            ? formatAiText(cached.text, COMM_SUBTITLE_ICONS)
             : `<div class="loading-wrap"><div class="spinner"></div><span>해설을 생성하는 중...</span></div>`}
         </div>
       </div>
@@ -1728,7 +1767,7 @@ async function fetchCommentary(dateKey, todayData) {
     const cachedNow = LS.getJson('commentary_' + _qtNow + '_' + dateKey, null);
     if (cachedNow) {
       const el = document.getElementById('aiText');
-      if (el) el.textContent = cachedNow.text;
+      if (el) el.innerHTML = formatAiText(cachedNow.text, COMM_SUBTITLE_ICONS);
       const ci = document.getElementById('cacheInfo');
       if (ci) ci.textContent = `${cachedNow.ai==='gemini'?'Gemini':'Mistral'} · ${cachedNow.time} 생성`;
       setLED('on', cachedNow.ai==='gemini'?'Gemini':'Mistral');
@@ -1747,7 +1786,7 @@ async function fetchCommentary(dateKey, todayData) {
     const now  = new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
     LS.setJson('commentary_'+getActiveQT()+'_'+dateKey, { text, time: now, ai });
     const el = document.getElementById('aiText');
-    if (el) el.textContent = text;
+    if (el) el.innerHTML = formatAiText(text, COMM_SUBTITLE_ICONS);
     const ci = document.getElementById('cacheInfo');
     if (ci) ci.textContent = `${ai==='gemini'?'Gemini':'Mistral'} · ${now} 생성`;
     setLED('on', ai==='gemini'?'Gemini':'Mistral');
@@ -1787,7 +1826,7 @@ function renderExegesisPanel() {
       <div class="ai-body">
         <div id="exegText" class="ai-text">
           ${cached
-            ? cached.text
+            ? formatAiText(cached.text, EXEG_SUBTITLE_ICONS)
             : `<div class="loading-wrap"><div class="spinner"></div><span>본문해석을 생성하는 중...</span></div>`}
         </div>
       </div>
@@ -1815,7 +1854,7 @@ async function fetchExegesis(dateKey, todayData) {
     const cachedNow = LS.getJson('exegesis_' + _qtNow + '_' + dateKey, null);
     if (cachedNow) {
       const el = document.getElementById('exegText');
-      if (el) el.textContent = cachedNow.text;
+      if (el) el.innerHTML = formatAiText(cachedNow.text, EXEG_SUBTITLE_ICONS);
       const ci = document.getElementById('exegCacheInfo');
       if (ci) ci.textContent = `${cachedNow.ai==='gemini'?'Gemini':'Mistral'} · ${cachedNow.time} 생성`;
       setLED('on', cachedNow.ai==='gemini'?'Gemini':'Mistral');
@@ -1833,7 +1872,7 @@ async function fetchExegesis(dateKey, todayData) {
     const now  = new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
     LS.setJson('exegesis_'+getActiveQT()+'_'+dateKey, { text, time: now, ai });
     const el = document.getElementById('exegText');
-    if (el) el.textContent = text;
+    if (el) el.innerHTML = formatAiText(text, EXEG_SUBTITLE_ICONS);
     const ci = document.getElementById('exegCacheInfo');
     if (ci) ci.textContent = `${ai==='gemini'?'Gemini':'Mistral'} · ${now} 생성`;
     setLED('on', ai==='gemini'?'Gemini':'Mistral');
