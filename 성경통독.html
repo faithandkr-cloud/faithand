@@ -12,6 +12,7 @@
   --gold:#9a7b35; --gold-lt:#c9a84c; --gold-ltr:#e8c96a;
   --cream:#f0ead8; --txt:#d8cdb0; --txt-dim:#8a8070;
   --green:#4a9b6f; --green-lt:#7bd1a3;
+  --verse-fs:15px;
   --safe-top:env(safe-area-inset-top,0px);
   --safe-bot:env(safe-area-inset-bottom,0px);
 }
@@ -76,23 +77,48 @@ header {
 .hd-ver-btns { display: none; }
 .hd-ver-btn  { display: none; }
 
-/* ── 낭독 컨트롤 바 — 날짜카드 바로 아래 ── */
-#tts-bar{
-  background:linear-gradient(160deg,var(--navy),var(--navy-lt));
-  border-bottom:1px solid rgba(154,123,53,.2);
-  padding:5px 10px;flex-shrink:0;
-  display:flex;align-items:center;gap:6px;
+/* ── 낭독 플레이어 — 홈 버튼 바로 아래 (구 1년 진행현황 자리) ── */
+#player-bar{
+  background:rgba(0,0,0,.3);border-bottom:1px solid rgba(154,123,53,.25);
+  padding:8px 14px;flex-shrink:0;
 }
+.player-row1{display:flex;align-items:center;gap:8px;}
+.player-row1 button{
+  width:32px;height:32px;border-radius:50%;flex-shrink:0;
+  background:rgba(154,123,53,.15);border:1px solid rgba(154,123,53,.35);
+  color:var(--gold-lt);font-size:.8rem;cursor:pointer;font-family:inherit;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;
+}
+.player-row1 button:hover{background:rgba(154,123,53,.32);}
 #tts-play-btn{
-  width:34px;height:34px;border-radius:50%;
+  width:36px;height:36px;
   background:linear-gradient(135deg,var(--gold),var(--gold-lt));
-  border:none;color:var(--navy-dk);font-size:.95rem;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;transition:transform .1s,background .2s;
+  border:none;color:var(--navy-dk);font-size:.95rem;
 }
 #tts-play-btn:active{transform:scale(.92);}
 #tts-play-btn.playing{background:linear-gradient(135deg,#c85a3a,#e07050);}
 .tts-label{font-size:.72rem;color:var(--gold-lt);font-weight:700;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#player-opt-btn{
+  margin-left:auto;background:none;border:none;color:var(--txt-dim);
+  font-size:1.1rem;font-weight:900;width:26px;height:26px;
+}
+.player-row2{display:flex;align-items:center;gap:8px;margin-top:6px;}
+.player-time{font-size:.62rem;color:var(--txt-dim);font-weight:700;min-width:30px;text-align:center;flex-shrink:0;}
+.player-seek{
+  flex:1;-webkit-appearance:none;appearance:none;
+  height:4px;border-radius:10px;background:rgba(255,255,255,.12);outline:none;cursor:pointer;
+}
+.player-seek::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;
+  width:13px;height:13px;border-radius:50%;
+  background:var(--gold-ltr);cursor:pointer;box-shadow:0 0 4px rgba(232,201,106,.6);
+}
+.player-seek::-moz-range-thumb{
+  width:13px;height:13px;border-radius:50%;border:none;
+  background:var(--gold-ltr);cursor:pointer;
+}
+.player-options{display:none;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap;}
+.player-options.open{display:flex;}
 .tts-speed-wrap{display:flex;gap:4px;}
 .tts-speed-btn{
   background:rgba(154,123,53,.12);border:1px solid rgba(154,123,53,.28);
@@ -107,16 +133,6 @@ header {
   white-space:nowrap;transition:all .15s;
 }
 #tts-scroll-btn.on{background:rgba(74,155,111,.3);color:var(--green-lt);border-color:rgba(74,155,111,.6);}
-
-/* ── 진행 바 ── */
-#pb-wrap{
-  background:rgba(0,0,0,.3);border-bottom:1px solid rgba(154,123,53,.2);
-  padding:6px 14px;flex-shrink:0;
-  display:flex;align-items:center;gap:10px;
-}
-.pb-track{flex:1;height:5px;background:rgba(255,255,255,.08);border-radius:10px;overflow:hidden;}
-.pb-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-ltr));border-radius:10px;transition:width .4s;}
-.pb-text{font-size:.68rem;color:var(--gold-lt);font-weight:700;white-space:nowrap;}
 
 /* ── 캘린더·진행현황 팝업 오버레이 ── */
 #cal-overlay{
@@ -184,6 +200,15 @@ header {
   background:linear-gradient(90deg,var(--gold),var(--gold-lt));
   color:var(--navy-dk);border-color:var(--gold-lt);
 }
+/* 본문 글자 크기 조절 버튼 */
+.font-ctrl-group{display:flex;gap:3px;flex-shrink:0;}
+.font-ctrl-btn{
+  padding:3px 8px;border-radius:7px;font-size:.68rem;font-weight:800;
+  border:1px solid rgba(154,123,53,.35);background:rgba(154,123,53,.12);
+  color:var(--gold-lt);cursor:pointer;font-family:inherit;transition:all .15s;
+  user-select:none;
+}
+.font-ctrl-btn:hover{background:rgba(154,123,53,.32);color:var(--gold-ltr);}
 
 /* ── 날짜+이동 통합 띠 ── */
 #today-card{
@@ -278,7 +303,7 @@ header {
   font-size:.75rem !important;
   position:static !important;
 }
-.v-text{font-size:.88rem;color:var(--txt);line-height:1.8;word-break:keep-all;}
+.v-text{font-size:var(--verse-fs, .88rem);color:var(--cream);line-height:1.8;word-break:keep-all;}
 
 .nav-btn{
   background:linear-gradient(160deg,var(--navy),var(--navy-lt));
@@ -449,10 +474,29 @@ header {
   </div>
 </header>
 
-<!-- 진행 바 -->
-<div id="pb-wrap">
-  <div class="pb-track"><div class="pb-fill" id="pb-fill" style="width:0%"></div></div>
-  <span class="pb-text" id="pb-text">0 / 365</span>
+<!-- 낭독 플레이어 (구 1년 진행현황 자리) -->
+<div id="player-bar">
+  <div class="player-row1">
+    <button id="player-prev-btn" onclick="ttsPrevChapter()" title="이전 장">⏮</button>
+    <button id="tts-play-btn" onclick="ttsToggle()" title="낭독 시작/정지">▶</button>
+    <button id="player-next-btn" onclick="ttsNextChapter()" title="다음 장">⏭</button>
+    <span class="tts-label" id="tts-label">성경 낭독</span>
+    <button id="player-opt-btn" onclick="togglePlayerOptions()" title="재생 옵션">⋯</button>
+  </div>
+  <div class="player-row2">
+    <span class="player-time" id="player-cur-time">0:00</span>
+    <input type="range" id="player-seek" class="player-seek" min="0" max="0" value="0" step="1"
+           oninput="ttsSeekInput()" onchange="ttsSeekCommit()">
+    <span class="player-time" id="player-dur-time">0:00</span>
+  </div>
+  <div class="player-options" id="player-options">
+    <div class="tts-speed-wrap">
+      <button class="tts-speed-btn" data-rate="0.8" onclick="ttsSetRate(0.8)">느리게</button>
+      <button class="tts-speed-btn active" data-rate="1" onclick="ttsSetRate(1)">보통</button>
+      <button class="tts-speed-btn" data-rate="1.3" onclick="ttsSetRate(1.3)">빠르게</button>
+    </div>
+    <button id="tts-scroll-btn" class="on" onclick="ttsToggleScroll()">🔃 자동스크롤</button>
+  </div>
 </div>
 
 <!-- 콘텐츠 -->
@@ -473,18 +517,11 @@ header {
         <button class="tc-ver-btn" onclick="setVersion('우리말성경')">우리말</button>
         <button class="tc-ver-btn" onclick="setVersion('niv')">NIV</button>
       </div>
-    </div>
-
-    <!-- 낭독 컨트롤 바 -->
-    <div id="tts-bar">
-      <button id="tts-play-btn" onclick="ttsToggle()" title="낭독 시작/정지">▶</button>
-      <span class="tts-label" id="tts-label">성경 낭독</span>
-      <div class="tts-speed-wrap">
-        <button class="tts-speed-btn" data-rate="0.8" onclick="ttsSetRate(0.8)">느리게</button>
-        <button class="tts-speed-btn active" data-rate="1" onclick="ttsSetRate(1)">보통</button>
-        <button class="tts-speed-btn" data-rate="1.3" onclick="ttsSetRate(1.3)">빠르게</button>
+      <div class="hd-addr-divider"></div>
+      <div class="font-ctrl-group">
+        <span class="font-ctrl-btn" title="본문 글자 크게" onclick="adjBtVerseFont(1)">A+</span>
+        <span class="font-ctrl-btn" title="본문 글자 작게" onclick="adjBtVerseFont(-1)">A-</span>
       </div>
-      <button id="tts-scroll-btn" class="on" onclick="ttsToggleScroll()">🔃 자동스크롤</button>
     </div>
 
     <!-- 읽었습니다 버튼 (숨김) -->
@@ -855,6 +892,17 @@ function renderCard() {
   updateProgress();
 }
 
+// ── 본문 글자 크기 조절 ──
+let btVerseFontSize = parseInt(localStorage.getItem('bt_verseFontSize') || '15');
+function applyBtVerseFont() {
+  document.documentElement.style.setProperty('--verse-fs', btVerseFontSize + 'px');
+}
+function adjBtVerseFont(delta) {
+  btVerseFontSize = Math.min(24, Math.max(11, btVerseFontSize + delta));
+  localStorage.setItem('bt_verseFontSize', btVerseFontSize);
+  applyBtVerseFont();
+}
+
 function jumpToday() {
   goToday();
   renderCard();
@@ -862,11 +910,7 @@ function jumpToday() {
 }
 
 function updateProgress() {
-  const total = Object.keys(SCHEDULE).length;
-  const done  = Object.keys(checkedDays).length;
-  const pct   = Math.round(done/total*100);
-  document.getElementById('pb-fill').style.width = pct+'%';
-  document.getElementById('pb-text').textContent = done+' / '+total;
+  // (구) 상단 1년 진행바는 제거됨 — 진행 현황은 📅 캘린더 팝업(총 읽은 날)에서 확인
 }
 
 /* ══════════════════════════════
@@ -1226,16 +1270,9 @@ async function _deleteZipFile() {
   });
 }
 
-function _setAudioFolderStatus(text, ok) {
-  const el = document.getElementById('audio-folder-status');
-  if (!el) return;
-  el.textContent = text;
-  el.className = ok ? 's-file-badge' : 's-file-badge unset';
-}
-
 /* ── 경량 ZIP 중앙 디렉토리 리더 ──
    store(무압축) 모드 zip 전용. 압축 해제 없이 각 mp3의 파일 내 위치(offset·size)만
-   찾아낸다. 8.9GB처럼 4GB를 넘는 zip은 ZIP64 형식이 되므로 이를 함께 처리한다. */
+   찾아낸다. 4GB를 넘는 zip은 ZIP64 형식이 되므로 이를 함께 처리한다. */
 const _ZIP_EOCD_SIG = 0x06054b50;
 const _ZIP64_LOC_SIG = 0x07064b50;
 const _ZIP64_EOCD_SIG = 0x06064b50;
@@ -1327,6 +1364,13 @@ async function zipGetEntryBlob(file, entry, mimeType) {
   const dataStart = entry.localOffset + 30 + fnLen + extraLen;
   const dataEnd   = dataStart + entry.compSize;
   return file.slice(dataStart, dataEnd, mimeType || 'audio/mpeg');
+}
+
+function _setAudioFolderStatus(text, ok) {
+  const el = document.getElementById('audio-folder-status');
+  if (!el) return;
+  el.textContent = text;
+  el.className = ok ? 's-file-badge' : 's-file-badge unset';
 }
 
 /* zip 항목 목록으로 "책 폴더명 → {장번호: entry}" 인덱스 구축 */
@@ -1507,6 +1551,7 @@ let ttsCurIdx    = 0;
 let ttsPlaying   = false;
 let ttsRate      = 1.0;
 let ttsAutoScroll = true;
+let _seekDragging = false;
 
 function ttsHighlightChapter(idx) {
   document.querySelectorAll('#verse-content .ch-title.tts-active')
@@ -1524,10 +1569,47 @@ function ttsHighlightChapter(idx) {
 
 let ttsObjectUrl = null;
 
+// mm:ss 형식으로 시간 표시
+function _fmtTime(sec) {
+  if (!isFinite(sec) || sec < 0) sec = 0;
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return m + ':' + String(s).padStart(2, '0');
+}
+
+// 탐색바(seek)·시간표시를 초기화 (장 전환 시)
+function _resetPlayerSeek() {
+  const seek = document.getElementById('player-seek');
+  if (seek) { seek.value = 0; seek.max = 0; }
+  const cur = document.getElementById('player-cur-time');
+  if (cur) cur.textContent = '0:00';
+  const dur = document.getElementById('player-dur-time');
+  if (dur) dur.textContent = '0:00';
+}
+
+// 현재 재생 중인 ttsAudio에 탐색바·시간표시 이벤트 연결
+function _attachAudioUIEvents() {
+  if (!ttsAudio) return;
+  ttsAudio.addEventListener('loadedmetadata', () => {
+    const seek = document.getElementById('player-seek');
+    if (seek) seek.max = Math.floor(ttsAudio.duration) || 0;
+    const durEl = document.getElementById('player-dur-time');
+    if (durEl) durEl.textContent = _fmtTime(ttsAudio.duration);
+  });
+  ttsAudio.addEventListener('timeupdate', () => {
+    if (_seekDragging) return;
+    const seek = document.getElementById('player-seek');
+    if (seek) seek.value = Math.floor(ttsAudio.currentTime);
+    const curEl = document.getElementById('player-cur-time');
+    if (curEl) curEl.textContent = _fmtTime(ttsAudio.currentTime);
+  });
+}
+
 async function ttsPlayFrom(idx) {
   if (idx >= ttsChapters.length) { ttsDone(); return; }
   ttsCurIdx = idx;
   ttsHighlightChapter(idx);
+  _resetPlayerSeek();
 
   const ch = ttsChapters[idx];
   const file = await prsGetAudioFile(ch.bookName, ch.chNum);
@@ -1544,6 +1626,7 @@ async function ttsPlayFrom(idx) {
   ttsObjectUrl = URL.createObjectURL(file);
   ttsAudio = new Audio(ttsObjectUrl);
   ttsAudio.playbackRate = ttsRate;
+  _attachAudioUIEvents();
   ttsAudio.play().catch(() => {
     // 재생 실패 시 다음 장으로
     if (ttsPlaying) ttsPlayFrom(idx + 1);
@@ -1560,12 +1643,18 @@ function ttsPlay() {
     alert('먼저 설정(⚙️)에서 낭독 mp3 zip을 지정해 주세요.');
     return;
   }
-  ttsChapters = ttsCollectChapters();
+  if (!ttsChapters.length) ttsChapters = ttsCollectChapters();
   if (!ttsChapters.length) { alert('낭독할 본문이 없습니다.'); return; }
   ttsPlaying = true;
   const btn = document.getElementById('tts-play-btn');
-  btn.textContent = '⏸'; btn.classList.add('playing');
-  ttsPlayFrom(ttsCurIdx);
+  if (btn) { btn.textContent = '⏸'; btn.classList.add('playing'); }
+  // 일시정지 상태였다면 처음부터 다시 받아오지 않고 이어서 재생
+  if (ttsAudio && ttsAudio.src) {
+    ttsHighlightChapter(ttsCurIdx);
+    ttsAudio.play().catch(() => { ttsPlayFrom(ttsCurIdx); });
+  } else {
+    ttsPlayFrom(ttsCurIdx);
+  }
 }
 
 function ttsPause() {
@@ -1586,6 +1675,47 @@ function ttsDone() {
   document.getElementById('tts-label').textContent = '낭독 완료 ✓';
   document.querySelectorAll('#verse-content .ch-title.tts-active')
     .forEach(el => el.classList.remove('tts-active'));
+  _resetPlayerSeek();
+}
+
+// 이전/다음 장으로 이동 (재생 중이면 바로 이어서 재생, 멈춘 상태면 위치만 이동)
+function ttsPrevChapter() {
+  if (!audioFilesLoaded) { alert('먼저 설정(⚙️)에서 낭독 mp3 zip을 지정해 주세요.'); return; }
+  if (!ttsChapters.length) ttsChapters = ttsCollectChapters();
+  if (!ttsChapters.length) { alert('낭독할 본문이 없습니다.'); return; }
+  const idx = Math.max(0, ttsCurIdx - 1);
+  if (ttsPlaying) {
+    ttsPlayFrom(idx);
+  } else {
+    ttsCurIdx = idx;
+    ttsHighlightChapter(idx);
+  }
+}
+function ttsNextChapter() {
+  if (!audioFilesLoaded) { alert('먼저 설정(⚙️)에서 낭독 mp3 zip을 지정해 주세요.'); return; }
+  if (!ttsChapters.length) ttsChapters = ttsCollectChapters();
+  if (!ttsChapters.length) { alert('낭독할 본문이 없습니다.'); return; }
+  const idx = Math.min(ttsChapters.length - 1, ttsCurIdx + 1);
+  if (ttsPlaying) {
+    ttsPlayFrom(idx);
+  } else {
+    ttsCurIdx = idx;
+    ttsHighlightChapter(idx);
+  }
+}
+
+// 탐색바 드래그 중 미리보기 시간 표시
+function ttsSeekInput() {
+  _seekDragging = true;
+  const seek = document.getElementById('player-seek');
+  const curEl = document.getElementById('player-cur-time');
+  if (curEl && seek) curEl.textContent = _fmtTime(parseFloat(seek.value));
+}
+// 탐색바를 놓으면 실제 재생 위치 이동
+function ttsSeekCommit() {
+  const seek = document.getElementById('player-seek');
+  if (ttsAudio && seek) ttsAudio.currentTime = parseFloat(seek.value);
+  _seekDragging = false;
 }
 
 function ttsSetRate(rate) {
@@ -1603,11 +1733,21 @@ function ttsToggleScroll() {
   btn.textContent = ttsAutoScroll ? '🔃 자동스크롤' : '↕ 수동스크롤';
 }
 
+// 재생 옵션(속도·자동스크롤) 펼침/접힘
+function togglePlayerOptions() {
+  const el = document.getElementById('player-options');
+  if (el) el.classList.toggle('open');
+}
+
 const _patchTts = () => {
   if (ttsPlaying) ttsPause();
+  if (ttsAudio) { ttsAudio.pause(); ttsAudio.src = ''; ttsAudio = null; }
+  if (ttsObjectUrl) { URL.revokeObjectURL(ttsObjectUrl); ttsObjectUrl = null; }
   ttsCurIdx = 0;
+  ttsChapters = [];
   const lbl = document.getElementById('tts-label');
   if (lbl) lbl.textContent = '성경 낭독';
+  _resetPlayerSeek();
 };
 /* ── 초기화 ── */
 load();
@@ -1618,6 +1758,7 @@ loadVerses();
 updateProgress();
 refreshBibleDataStatus(false);
 restoreAudioZip();
+applyBtVerseFont();
 </script>
 </body>
 </html>
