@@ -256,12 +256,16 @@ main { width: 100%; margin: 0; padding: 0; box-sizing: border-box; }
 .ai-body { padding: 18px; }
 .ai-text {
   font-size: .95rem; line-height: 1.9;
-  color: var(--cream); white-space: pre-wrap; word-break: keep-all;
+  color: var(--cream); word-break: keep-all;
   text-align: left;
 }
+.ai-para {
+  margin: 0 0 10px;
+}
+.ai-para:last-child { margin-bottom: 0; }
 .ai-subtitle {
   display: block;
-  margin: 16px 0 6px;
+  margin: 18px 0 6px;
   color: var(--gold-ltr);
   font-weight: 700;
   font-size: .92rem;
@@ -878,18 +882,39 @@ function escapeHtmlText(s) {
   return String(s == null ? '' : s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
-// raw 텍스트를 줄 단위로 훑어, 소제목으로 인식되는 줄은 아이콘+강조 스타일을 입혀 반환
+// raw 텍스트를 문단 단위(빈 줄 기준)로 묶어, 소제목으로 인식되는 줄은 아이콘+강조 스타일을,
+// 나머지는 <p class="ai-para">로 감싸 반환한다.
+// (예전 방식은 원문의 빈 줄을 white-space:pre-wrap으로 그대로 보여줘서
+//  소제목 margin과 빈 줄 간격이 겹쳐 첫 소제목이 아래로 처지고, 소제목 사이 간격이
+//  들쭉날쭉해지는 문제가 있었음 → 문단 단위로 재구성해 간격을 CSS가 일관되게 제어하도록 함)
 function formatAiText(raw, iconMap) {
   if (!raw) return '';
-  return raw.split('\n').map(line => {
+  const isSubtitleLine = (line) => {
     const trimmed = line.trim();
-    // 앞에 붙는 번호(1. / 1) / ① 등)와 뒤에 붙는 콜론 제거 후 소제목 매칭
     const key = trimmed.replace(/^[\d①-⑩]+[.\)]\s*/, '').replace(/[:：]\s*$/, '');
-    if (key && iconMap[key]) {
-      return `<span class="ai-subtitle">${iconMap[key]} ${escapeHtmlText(key)}</span>`;
-    }
-    return escapeHtmlText(line);
-  }).join('\n');
+    return (key && iconMap[key]) ? key : null;
+  };
+  // 빈 줄(하나 이상) 기준으로 블록 분리
+  const blocks = raw.split(/\n\s*\n+/).map(b => b.trim()).filter(Boolean);
+  const html = [];
+  blocks.forEach(block => {
+    const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
+    lines.forEach(line => {
+      const key = isSubtitleLine(line);
+      if (key) {
+        html.push(`<span class="ai-subtitle">${iconMap[key]} ${escapeHtmlText(key)}</span>`);
+      } else {
+        // 직전 요소가 일반 문단이면 같은 <p>에 줄바꿈(<br>)으로 이어붙임
+        const last = html[html.length - 1];
+        if (last && last.startsWith('<p class="ai-para">')) {
+          html[html.length - 1] = last.slice(0, -4) + '<br>' + escapeHtmlText(line) + '</p>';
+        } else {
+          html.push(`<p class="ai-para">${escapeHtmlText(line)}</p>`);
+        }
+      }
+    });
+  });
+  return html.join('');
 }
 
 // ── localStorage 헬퍼 (ai_chat_v7 키 공유) ──
