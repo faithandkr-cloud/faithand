@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>성경읽기</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;800&family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg: #F7F3EA;
+  --bg-elevated: #FFFDF8;
+  --ink: #2A2823;
+  --ink-soft: #6B6558;
+  --line: #E6DFCE;
+  --navy: #1B2A52;
+  --navy-soft: #3A4B7A;
+  --gold: #A8823C;
+  --gold-bg: #FBF0D9;
+  --danger: #B34A3C;
+  --font-serif: 'Noto Serif KR', serif;
+  --font-sans: 'Noto Sans KR', -apple-system, 'Malgun Gothic', sans-serif;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0; padding:0; height:100%; background:var(--bg); color:var(--ink); font-family:var(--font-sans); overflow:hidden;}
+button{font-family:inherit; cursor:pointer;}
+button:active{opacity:.7;}
+select{font-family:inherit;}
+
+/* ===== 레이아웃 뼈대 ===== */
+#app{display:flex; flex-direction:column; height:100vh; height:100dvh;}
+
+/* ===== 상단바 ===== */
+#topbar{
+  flex-shrink:0; background:var(--navy); color:#fff;
+  padding:10px 12px 9px; box-shadow:0 2px 8px rgba(0,0,0,0.15); z-index:20;
+}
+#topbar-row1{display:flex; align-items:center; gap:5px; flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none;}
+#topbar-row1::-webkit-scrollbar{display:none;}
+#locBtn{
+  flex:1 1 44px; min-width:36px; background:transparent; border:none; border-radius:8px;
+  padding:7px 4px; color:#fff; font-size:14.5px; font-weight:700; text-align:center;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.trans-sel{flex:1 1 62px; min-width:52px; background:transparent; color:#fff; border:none; border-radius:8px;
+  padding:7px 2px; font-size:14.5px; font-weight:700; -webkit-appearance:none; appearance:none; text-align:center; text-align-last:center;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.trans-caret{display:inline-block; margin-left:4px; font-size:10px; opacity:0.85;}
+.icon-btn{
+  background:transparent; border:none; border-radius:8px; color:#fff;
+  width:32px; height:38px; font-size:14.5px; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  transition:background .12s ease, transform .12s ease;
+}
+.icon-btn:active{background:rgba(255,255,255,0.32); transform:scale(0.94);}
+#hymnBtn{
+  background:transparent; border:none; border-radius:10px; color:#F0C75E;
+  height:40px; padding:0 12px; min-width:0; font-size:14.5px; font-weight:800; letter-spacing:0.2px; display:flex; align-items:center; justify-content:center; gap:4px; flex:0 0 auto;
+  box-shadow:none;
+  transition:color .12s ease, transform .12s ease;
+}
+#hymnBtn:active{transform:scale(0.94); color:#FFDB8A;}
+
+/* ===== 본문 ===== */
+#scriptureWrap{position:relative; flex:1; min-height:0; display:flex; flex-direction:column; overflow:hidden;}
+#scripture{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:18px 6px 100px;}
+.verse{
+  display:flex; align-items:baseline; gap:8px; padding:7px 0;
+  font-family:var(--font-serif); line-height:1.85; font-size:19px; border-bottom:1px solid transparent;
+}
+.verse.selecting{background:var(--gold-bg); border-radius:6px;}
+.jump-highlight{background:var(--gold-bg) !important; border-radius:8px;}
+.verse.has-memo, .verse-pair.has-memo{
+  background:rgba(58,75,122,0.055); border-radius:6px;
+  box-shadow:inset 3px 0 0 var(--navy-soft);
+}
+.verse.vhighlight, .verse-pair.vhighlight{
+  background:rgba(255,208,64,0.14); border-radius:6px; cursor:pointer;
+}
+.verse.vhighlight.has-memo, .verse-pair.vhighlight.has-memo{
+  background:rgba(255,208,64,0.14); box-shadow:inset 3px 0 0 var(--navy-soft);
+}
+.verse, .verse-pair{cursor:pointer;}
+.vnum{
+  flex-shrink:0; color:var(--gold); font-weight:700; font-size:19px; font-family:var(--font-sans);
+  min-width:1.6em; text-align:right; padding:0.15em 3px 0; margin:0 -3px; border-radius:5px; transition:background .1s ease;
+}
+.vnum[data-vnum]{cursor:pointer; user-select:none; -webkit-user-select:none;}
+.vnum[data-vnum]:active{background:var(--gold-bg);}
+.vnum[data-vnum].copied{color:#2E8B57; background:rgba(46,139,87,0.14); font-weight:900;}
+.vtext{flex:1;}
+.vtext.secondary{color:var(--ink-soft); font-size:16.5px; margin-top:2px;}
+.verse-pair{display:flex; flex-direction:column; padding:9px 0; border-bottom:1px dashed var(--line);}
+.verse-pair .row{display:flex; align-items:baseline; gap:8px;}
+.verse-icons{display:inline-flex; align-items:center; gap:4px; margin-left:6px; vertical-align:middle;}
+.vicon{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:18px; height:18px; border-radius:50%; font-size:10.5px; font-weight:800;
+  border:1px solid #EAD9AE; cursor:pointer;
+}
+.vicon.cmt-icon{background:var(--gold-bg); color:var(--gold); transition:background .1s ease;}
+.vicon.cmt-icon:active{background:var(--gold);}
+.vicon.memo-icon{background:#EAF1FB; color:var(--navy-soft); border-color:#CBDAF0; transition:background .1s ease;}
+.vicon.memo-icon:active{background:#CBDAF0;}
+.vicon.memo-icon.has-memo{background:var(--navy); color:#fff; border-color:var(--navy);}
+.chapter-head{
+  font-family:var(--font-sans); font-weight:800; font-size:15px; color:var(--navy-soft);
+  padding:2px 0 14px; letter-spacing:0.3px;
+}
+.compare-warning{
+  font-family:var(--font-sans); font-size:12.5px; line-height:1.6; color:#8a5a00;
+  background:#FFF6E0; border:1px solid #F0DA9E; border-radius:8px; padding:10px 12px; margin:0 0 14px;
+}
+.compare-warning b{color:var(--danger);}
+.load-msg{color:var(--ink-soft); text-align:center; padding:40px 20px; font-size:15px; line-height:1.7;}
+.load-msg b{color:var(--danger);}
+
+/* ===== 절 복사 토스트 ===== */
+#copyToast{
+  position:fixed; left:50%; bottom:calc(28px + var(--safe-bottom)); transform:translateX(-50%) translateY(10px);
+  background:rgba(42,40,35,0.92); color:#fff; font-size:13.5px; font-weight:700;
+  padding:9px 16px; border-radius:20px; z-index:120; opacity:0; pointer-events:none;
+  transition:opacity .15s ease, transform .15s ease; white-space:nowrap; box-shadow:0 4px 14px rgba(0,0,0,0.25);
+}
+#copyToast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+
+/* ===== 폰트크기 조절 팝오버 ===== */
+#fontPop{
+  position:fixed; top:64px; right:12px; background:var(--bg-elevated); border-radius:12px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.2); padding:10px; display:none; z-index:60; gap:8px;
+}
+#fontPop.show{display:flex;}
+#fontPop button{width:40px; height:40px; border-radius:8px; border:1px solid var(--line); background:#fff; font-size:16px; font-weight:800; color:var(--navy); transition:background .12s ease, transform .12s ease;}
+#fontPop button:active{background:var(--gold-bg); transform:scale(0.94);}
+
+/* ===== 설정 시트 색상 (헤더 톤 옅게) ===== */
+#settingsSheet{background:#EEF2FA;}
+
+#mainTransMenu{
+  position:fixed; background:#EEF2FA; border-radius:0 0 12px 12px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.28); padding:6px; display:none; z-index:60;
+  max-height:60vh; overflow-y:auto; min-width:130px; max-width:min(220px, calc(100vw - 24px));
+  scrollbar-width:none; -ms-overflow-style:none;
+}
+#mainTransMenu::-webkit-scrollbar{display:none; width:0; height:0;}
+#mainTransMenu.show{display:block;}
+.trans-menu-item{padding:6px 10px; border-radius:8px; font-size:12.5px; font-weight:700; color:var(--navy-soft); cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.trans-menu-item:active{background:#E4EAF7;}
+.trans-menu-item.active{background:var(--gold); color:#3a2c08;}
+
+/* ===== 바텀시트 공통 ===== */
+.sheet-backdrop{
+  position:fixed; inset:0; background:rgba(0,0,0,0.42); z-index:80; display:none; opacity:0; transition:opacity .2s;
+}
+.sheet-backdrop.show{display:block; opacity:1;}
+.sheet{
+  position:fixed; left:0; right:0; bottom:0; z-index:90; background:var(--bg-elevated);
+  border-radius:18px 18px 0 0; max-height:82vh; display:flex; flex-direction:column;
+  transform:translateY(100%); transition:transform .25s ease; box-shadow:0 -8px 30px rgba(0,0,0,0.25);
+  padding-bottom:var(--safe-bottom);
+}
+.sheet.show{transform:translateY(0);}
+.sheet-handle{width:40px; height:4px; background:var(--line); border-radius:2px; margin:10px auto 4px;}
+.sheet-title{font-size:16px; font-weight:800; padding:8px 18px 12px; color:var(--navy); display:flex; align-items:center; justify-content:space-between;}
+.x{color:var(--ink-soft); font-size:20px; font-weight:400; cursor:pointer; padding:4px 6px; border-radius:6px; transition:background .12s ease, color .12s ease;}
+.x:active{background:var(--gold-bg); color:var(--navy);}
+.sheet-body{overflow-y:auto; padding:0 18px 18px;}
+
+/* ===== 범위/책/장/절 4단 피커 (본문 영역 안, 헤더 바로 아래부터) =====
+   #scriptureWrap은 헤더 다음에 오는 요소라 그 안에서 top:0은 항상 "헤더 바로 아래"를 뜻한다.
+   JS로 헤더 높이를 재지 않아도 항상 정확하게 위치가 잡힌다. */
+#locBackdrop{position:absolute; inset:0; z-index:80;}
+#locSheet{
+  position:absolute; top:0; left:0; right:0; bottom:0; z-index:90;
+  max-height:none; border-radius:0 0 16px 16px; transform:translateY(-100%);
+  display:flex; flex-direction:column; box-shadow:0 10px 24px rgba(0,0,0,0.28);
+  transition:transform .25s ease; background:#EEF2FA;
+}
+#locSheet.show{transform:translateY(0);}
+#locSheet .sheet-handle{display:none;}
+.pk-header-row{display:flex; flex-shrink:0; background:#E4EAF7; border-top:1px solid var(--line); border-bottom:1px solid var(--line); gap:6px; padding:0 4px;}
+.pk-header{padding:8px 6px; font-size:12.5px; font-weight:800; color:var(--ink-soft); text-align:center;}
+.pk-header.range{flex:0 0 88px;}
+.pk-header.book{flex:1.6;}
+.pk-header.chapter{flex:0 0 76px;}
+.pk-header.pk-verse{flex:0 0 76px;}
+.pk-cols{display:flex; flex:1; min-height:0; gap:6px; padding:0 4px;}
+.pk-col{
+  overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; touch-action:pan-y;
+  scrollbar-width:none; -ms-overflow-style:none;
+}
+.pk-col::-webkit-scrollbar{display:none; width:0; height:0;}
+.pk-col.range{flex:0 0 88px; background:#E4EAF7;}
+.pk-col.book{flex:1.6;}
+.pk-col.chapter{flex:0 0 76px;}
+.pk-col.pk-verse{flex:0 0 76px;}
+.pk-item{padding:3px 12px; font-size:15px; font-weight:400; border-bottom:1px solid var(--line); color:var(--ink); cursor:pointer; transition:background .1s ease;}
+.pk-item:active{background:var(--gold-bg);}
+.pk-col.chapter .pk-item, .pk-col.pk-verse .pk-item{text-align:center; padding:3px 6px;}
+.pk-item.active{background:var(--gold); color:#3a2c08; font-weight:800;}
+.pk-item.range-btn{color:var(--navy-soft); font-weight:800;}
+.pk-item.range-label{color:var(--ink-soft); font-size:12px; font-weight:700; padding:9px 14px 4px; border-bottom:none;}
+.pk-confirm-bar{display:flex; border-top:1px solid var(--line); flex-shrink:0;}
+.pk-confirm-bar button{flex:1; padding:12px 8px; font-size:15px; font-weight:800; border:none; background:none; transition:background .12s ease;}
+.pk-confirm-bar button:active{background:var(--gold-bg);}
+#locConfirmBtn{color:#fff; background:var(--navy);}
+#locCancelBtn{color:var(--ink-soft); background:var(--bg);}
+
+/* 주석 시트 */
+#cmtBody{font-size:15px; line-height:1.85; color:var(--ink);}
+#cmtBody p{margin:0 0 10px;}
+#cmtBody a{color:var(--navy-soft);}
+#cmtBody strong{color:var(--navy);}
+
+/* 사전 팝업 */
+#dictPop{
+  position:fixed; z-index:70; max-width:88vw; width:320px; background:var(--bg-elevated);
+  border-radius:12px; box-shadow:0 12px 30px rgba(0,0,0,0.25); border:1px solid var(--line);
+  display:none; max-height:280px; flex-direction:column;
+}
+#dictPop.show{display:flex;}
+#dictPop .hd{padding:10px 14px; font-weight:800; color:var(--navy); border-bottom:1px solid var(--line); font-size:14px; display:flex; justify-content:space-between;}
+#dictPop .bd{padding:10px 14px; overflow-y:auto; font-size:13.5px; line-height:1.7; color:var(--ink);}
+
+/* 메모 시트 */
+.memo-item{background:var(--bg); border-radius:10px; padding:12px; margin-bottom:8px;}
+.memo-item .head{display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;}
+.memo-item .meta{font-size:12px; color:var(--gold); font-weight:800;}
+.memo-item .txt{font-size:14.5px; line-height:1.6; white-space:pre-wrap;}
+.memo-item .del{color:var(--danger); font-size:12px; font-weight:700; cursor:pointer; flex-shrink:0;}
+.memo-input-row{display:flex; gap:8px; margin-bottom:10px; align-items:stretch;}
+.memo-input-row select{width:64px; flex-shrink:0; border:1px solid var(--line); border-radius:8px; padding:8px 2px; font-size:13.5px; text-align:center; text-align-last:center;}
+#memoText{
+  width:100%; min-height:120px; border:1.5px solid var(--line); border-radius:10px; padding:10px 12px;
+  font-family:inherit; font-size:15px; resize:vertical;
+}
+.memo-save-row{display:flex; justify-content:flex-end; margin-bottom:14px;}
+#memoSaveBtn{background:var(--navy); color:#fff; border:none; border-radius:8px; padding:8px 20px; font-size:13.5px; font-weight:800;}
+
+/* 설정 시트 */
+.settings-card{background:#FFFFFF; border:1px solid #DCE4F5; border-radius:12px; padding:14px; margin-bottom:12px;}
+.settings-card-title{font-size:14.5px; font-weight:800; color:var(--navy); margin-bottom:4px;}
+.settings-card-desc{font-size:12px; color:var(--navy-soft); line-height:1.5; margin-bottom:10px;}
+.settings-file-label{
+  display:block; text-align:center; background:var(--gold-bg); color:var(--gold);
+  border:1px solid #EAD9AE; border-radius:8px; padding:10px; font-size:13.5px; font-weight:700; cursor:pointer;
+}
+.settings-file-label:active{background:var(--gold); color:#fff;}
+.settings-list{margin-top:10px;}
+.settings-list-item{
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  background:#F4F7FD; border:1px solid #DCE4F5; border-radius:8px;
+  padding:8px 10px; margin-bottom:6px; font-size:13px; color:var(--ink);
+}
+.settings-list-item .name{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:700;}
+.settings-list-item .remove{color:var(--danger); font-size:12px; font-weight:700; cursor:pointer; flex-shrink:0; padding:2px 6px;}
+.settings-empty{color:var(--navy-soft); font-size:12.5px; text-align:center; padding:8px 0;}
+.font-choice-row{display:flex; gap:8px;}
+.font-choice-btn{
+  flex:1; padding:12px 6px; border-radius:10px; border:1.5px solid #DCE4F5; background:#F4F7FD;
+  color:var(--ink); font-size:13px; font-weight:700; text-align:center;
+}
+.font-choice-btn.active{border-color:var(--gold); background:var(--gold-bg); color:var(--gold);}
+.settings-export-btn{width:100%; background:var(--navy-soft); color:#fff; border:none; border-radius:10px; padding:13px; font-size:14.5px; font-weight:800;}
+.settings-select{
+  width:100%; margin-top:10px; background:#F4F7FD; color:var(--ink); border:1.5px solid #DCE4F5;
+  border-radius:10px; padding:11px 10px; font-size:13.5px; font-weight:700; -webkit-appearance:none; appearance:none;
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="topbar">
+    <div id="topbar-row1">
+      <button class="icon-btn" id="settingsBtn" title="설정">☰</button>
+      <button id="locBtn"></button>
+      <button type="button" class="trans-sel" id="mainTransBtn"></button>
+      <button class="icon-btn" id="fontBtn" title="글자 크기">Aa</button>
+      <button id="hymnBtn" title="찬송가">🎵 찬송</button>
+    </div>
+  </div>
+
+  <div id="scriptureWrap">
+    <div id="scripture">
+      <div class="load-msg">불러오는 중…</div>
+    </div>
+
+    <!-- 범위/책/장/절 4단 피커 시트 (헤더 바로 아래, 본문 영역 안에서 슬라이드) -->
+    <div class="sheet-backdrop" id="locBackdrop"></div>
+    <div class="sheet" id="locSheet">
+      <div class="sheet-handle"></div>
+      <div class="pk-header-row">
+        <div class="pk-header range">범위</div>
+        <div class="pk-header book">책</div>
+        <div class="pk-header chapter">장</div>
+        <div class="pk-header pk-verse">절</div>
+      </div>
+      <div class="pk-cols">
+        <div class="pk-col range" id="pkRange"></div>
+        <div class="pk-col book" id="pkBook"></div>
+        <div class="pk-col chapter" id="pkChapter"></div>
+        <div class="pk-col pk-verse" id="pkVerse"></div>
+      </div>
+      <div class="pk-confirm-bar">
+        <button id="locConfirmBtn"></button>
+        <button id="locCancelBtn">취소</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 폰트 크기 팝오버 -->
+<div id="fontPop">
+  <button id="fontDown">가-</button>
+  <button id="fontUp">가+</button>
+</div>
+
+<!-- 번역본 선택 드롭다운 -->
+<div id="mainTransMenu"></div>
+
+
+
+<!-- 주석 시트 -->
+<div class="sheet-backdrop" id="cmtBackdrop"></div>
+<div class="sheet" id="cmtSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title"><span id="cmtTitle">주석</span><span class="x" id="cmtClose">✕</span></div>
+  <div class="sheet-body"><div id="cmtBody">불러오는 중…</div></div>
+</div>
+
+<!-- 메모 시트 -->
+<div class="sheet-backdrop" id="memoBackdrop"></div>
+<div class="sheet" id="memoSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title"><span>메모</span><span class="x" id="memoClose">✕</span></div>
+  <div class="sheet-body">
+    <div class="memo-input-row">
+      <select id="memoVerseSel"></select>
+      <textarea id="memoText" placeholder="묵상 내용을 적어보세요…" style="flex:1;"></textarea>
+    </div>
+    <div class="memo-save-row">
+      <button id="memoSaveBtn">저장</button>
+    </div>
+    <div id="memoList" style="margin-top:16px;"></div>
+  </div>
+</div>
+
+<!-- 설정 시트 -->
+<div class="sheet-backdrop" id="settingsBackdrop"></div>
+<div class="sheet" id="settingsSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title"><span>설정</span><span class="x" id="settingsClose">✕</span></div>
+  <div class="sheet-body">
+
+    <div class="settings-card">
+      <div class="settings-card-title">📖 성경 번역본 불러오기</div>
+      <div class="settings-card-desc">여러 번역본 JSON 파일을 한 번에 선택할 수 있습니다.</div>
+      <label class="settings-file-label" for="fileBible">📂 파일 선택 (여러 개 가능)</label>
+      <input type="file" id="fileBible" accept=".json" multiple style="display:none">
+      <div class="settings-list" id="bibleList"></div>
+    </div>
+
+    <div class="settings-card">
+      <div class="settings-card-title">📝 주석 불러오기</div>
+      <div class="settings-card-desc">합쳐진 주석 JSON 파일 1개를 선택하세요.</div>
+      <label class="settings-file-label" for="fileCmt">📂 파일 선택 (1개)</label>
+      <input type="file" id="fileCmt" accept=".json" style="display:none">
+      <div class="settings-list" id="cmtList"></div>
+    </div>
+
+    <div class="settings-card">
+      <div class="settings-card-title">📔 사전 불러오기</div>
+      <div class="settings-card-desc">사전 JSON 파일을 최대 3개까지 등록할 수 있습니다.</div>
+      <label class="settings-file-label" for="fileDict">📂 파일 선택 (여러 개 가능)</label>
+      <input type="file" id="fileDict" accept=".json" multiple style="display:none">
+      <div class="settings-list" id="dictList"></div>
+    </div>
+
+    <div class="settings-card">
+      <div class="settings-card-title">📚 번역본 비교 보기</div>
+      <div class="settings-card-desc">본문을 한 가지 번역본으로만 볼지, 두 번역본을 나란히 볼지 선택하세요.<br>※ 별도의 등록 창은 따로 없어요 — 위 "성경 번역본 불러오기"에 등록한 번역본들 중에서 아래 목록으로 비교할 번역본을 고르시면 됩니다.</div>
+      <div class="font-choice-row" id="compareModeRow">
+        <button type="button" class="font-choice-btn" data-compare="single">단일 보기</button>
+        <button type="button" class="font-choice-btn" data-compare="double">더블 보기</button>
+      </div>
+      <select class="settings-select" id="compareTransSel"></select>
+    </div>
+
+    <div class="settings-card">
+      <div class="settings-card-title">Aa 글자체 선택</div>
+      <div class="font-choice-row" id="fontChoiceRow"></div>
+    </div>
+
+    <div class="settings-card">
+      <div class="settings-card-title">💾 메모 내보내기</div>
+      <div class="settings-card-desc">지금까지 적은 모든 메모를 파일 하나로 저장합니다.</div>
+      <button class="settings-export-btn" id="exportMemoBtn">메모 파일로 내보내기</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- 절 복사 토스트 -->
+<div id="copyToast"></div>
+
+<!-- 사전 팝업 -->
+<div id="dictPop">
+  <div class="hd"><span id="dictWord"></span><span class="x" id="dictClose">✕</span></div>
+  <div class="bd" id="dictBody"></div>
+</div>
+
+<script>
+'use strict';
+
+/* ===================== 절 복사 기능 상태 ===================== */
+let CURRENT_VERSE_TEXT = {};   // {절번호: 본문텍스트} - 렌더링될 때마다 갱신
+const selectedVerses = new Set(); // 현재 빨간색으로 선택된 절번호들
+let MAIN_TRANS_KEYS = []; // 헤더 번역본 드롭다운에 표시할 번역본 목록
+
+/* ===================== 설정 ===================== */
+// 폰/패드에서 서버 없이 파일만 옮겨도 되게 하려면, 아래 세 폴더를 이 html과 같은 위치에 두면 됩니다.
+//   ./bible/{역본파일명}.json
+//   ./dictionaries/03_에스라사전.json
+//   ./commentaries/hokma/index.json , ./commentaries/hokma/{book}/{chapter}.json
+const TRANSLATIONS = [
+  {key:'개역개정', file:'개역개정.json'},
+  {key:'바른성경', file:'바른성경.json'},
+  {key:'표준새번역', file:'표준새번역.json'},
+  {key:'쉬운성경', file:'쉬운성경.json'},
+  {key:'우리말성경', file:'우리말성경.json'},
+  {key:'현대인의 성경', file:'현대인의 성경.json'},
+  {key:'흠정역', file:'흠정역.json'},
+  {key:'흠정역한자음', file:'흠정역한자음.json'},
+  {key:'한자병용', file:'한자병용.json'},
+  {key:'쉬운 아가페', file:'쉬운 아가페.json'},
+  {key:'Korean Catholic Bible', file:'Korean Catholic Bible.json'},
+  {key:'Korean CoTrans Bible', file:'Korean CoTrans Bible.json'},
+  {key:'kor', file:'kor.json'},
+  {key:'korhch', file:'korhch.json'},
+  {key:'kongdong', file:'kongdong.json'},
+  {key:'NIV', file:'niv.json'},
+  {key:'일본 구어역', file:'일본 구어역.json'},
+  {key:'일본 문어역', file:'일본 문어역.json'}
+];
+const DICT_FILE = './dictionaries/03_에스라사전.json';
+const CMT_BASE = './commentaries/hokma/';
+
+// 66권 book number -> 한글 이름 (선택 시트 표시는 개역개정 bookNames를 우선 사용, 로드 전 fallback)
+const BOOK_FALLBACK = {1:'창세기',2:'출애굽기',3:'레위기',4:'민수기',5:'신명기',6:'여호수아',7:'사사기',8:'룻기',9:'사무엘상',10:'사무엘하',11:'열왕기상',12:'열왕기하',13:'역대상',14:'역대하',15:'에스라',16:'느헤미야',17:'에스더',18:'욥기',19:'시편',20:'잠언',21:'전도서',22:'아가',23:'이사야',24:'예레미야',25:'예레미야애가',26:'에스겔',27:'다니엘',28:'호세아',29:'요엘',30:'아모스',31:'오바댜',32:'요나',33:'미가',34:'나훔',35:'하박국',36:'스바냐',37:'학개',38:'스가랴',39:'말라기',40:'마태복음',41:'마가복음',42:'누가복음',43:'요한복음',44:'사도행전',45:'로마서',46:'고린도전서',47:'고린도후서',48:'갈라디아서',49:'에베소서',50:'빌립보서',51:'골로새서',52:'데살로니가전서',53:'데살로니가후서',54:'디모데전서',55:'디모데후서',56:'디도서',57:'빌레몬서',58:'히브리서',59:'야고보서',60:'베드로전서',61:'베드로후서',62:'요한1서',63:'요한2서',64:'요한3서',65:'유다서',66:'요한계시록'};
+const CHAPTER_COUNT = {1:50,2:40,3:27,4:36,5:34,6:24,7:21,8:4,9:31,10:24,11:22,12:25,13:29,14:36,15:10,16:13,17:10,18:42,19:150,20:31,21:12,22:8,23:66,24:52,25:5,26:48,27:12,28:14,29:3,30:9,31:1,32:4,33:7,34:3,35:3,36:3,37:2,38:14,39:4,40:28,41:16,42:24,43:21,44:28,45:16,46:16,47:13,48:6,49:6,50:4,51:4,52:5,53:3,54:6,55:4,56:3,57:1,58:13,59:5,60:5,61:3,62:5,63:1,64:1,65:1,66:22};
+
+/* ===================== 상태 ===================== */
+let state = {
+  book: 1, chapter: 1,
+  mainKey: '개역개정', compareKey: '바른성경', compareOn:true,
+  fontSize: 19, fontChoice: 'serif'
+};
+const TRANS_DATA = {}; // key -> {meta,bookNames,verses}
+let DICT_DATA = null;
+let CMT_INDEX = null;
+const CMT_CACHE = {}; // "book_chapter" -> array
+
+const FONT_OPTIONS = [
+  {id:'serif', label:'명조체', family:"'Noto Serif KR', serif"},
+  {id:'sans', label:'고딕체', family:"'Noto Sans KR', -apple-system, 'Malgun Gothic', sans-serif"},
+  {id:'myeongjo', label:'나눔명조', family:"'Nanum Myeongjo', serif"}
+];
+
+/* ===================== IndexedDB 저장소 (AppDB) =====================
+   번역본/주석/사전을 서버 없이 "파일 선택 → 브라우저에 저장" 방식으로 쓰기 위한 공용 저장소.
+   키 형식: 'bible:개역개정', 'commentary:main', 'dict:03_에스라사전' 등
+*/
+const AppDB = (()=>{
+  const DB_NAME = 'BibleAppStore';
+  const DB_VER = 1;
+  let _db = null;
+  function open(){
+    if(_db) return Promise.resolve(_db);
+    return new Promise((res, rej)=>{
+      const req = indexedDB.open(DB_NAME, DB_VER);
+      req.onupgradeneeded = e=>{
+        const db = e.target.result;
+        if(!db.objectStoreNames.contains('files')){
+          db.createObjectStore('files', {keyPath:'key'});
+        }
+      };
+      req.onsuccess = e=>{ _db = e.target.result; res(_db); };
+      req.onerror = e=> rej(e);
+    });
+  }
+  async function save(key, data, meta){
+    const db = await open();
+    return new Promise((res, rej)=>{
+      const tx = db.transaction('files','readwrite');
+      tx.objectStore('files').put({key, data, meta:meta||{}, savedAt:Date.now()});
+      tx.oncomplete = ()=> res(true);
+      tx.onerror = e=> rej(e);
+    });
+  }
+  async function load(key){
+    const db = await open();
+    return new Promise((res, rej)=>{
+      const tx = db.transaction('files','readonly');
+      const req = tx.objectStore('files').get(key);
+      req.onsuccess = ()=> res(req.result||null);
+      req.onerror = e=> rej(e);
+    });
+  }
+  async function remove(key){
+    const db = await open();
+    return new Promise((res, rej)=>{
+      const tx = db.transaction('files','readwrite');
+      tx.objectStore('files').delete(key);
+      tx.oncomplete = ()=> res(true);
+      tx.onerror = e=> rej(e);
+    });
+  }
+  async function listByPrefix(prefix){
+    const db = await open();
+    return new Promise((res, rej)=>{
+      const out = [];
+      const tx = db.transaction('files','readonly');
+      const req = tx.objectStore('files').openCursor();
+      req.onsuccess = e=>{
+        const cursor = e.target.result;
+        if(cursor){
+          if(cursor.value.key.indexOf(prefix)===0) out.push(cursor.value);
+          cursor.continue();
+        } else res(out);
+      };
+      req.onerror = e=> rej(e);
+    });
+  }
+  return {save, load, remove, listByPrefix};
+})();
+
+/* ===================== 유틸 ===================== */
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function bookName(bn){
+  const md = TRANS_DATA[state.mainKey];
+  return md?.bookNames?.[String(bn)]?.name || BOOK_FALLBACK[bn] || ('책'+bn);
+}
+function saveState(){ try{ localStorage.setItem('bible_mobile_state', JSON.stringify(state)); }catch(_){} }
+function loadState(){
+  try{
+    const s = JSON.parse(localStorage.getItem('bible_mobile_state')||'null');
+    if(s) Object.assign(state, s);
+  }catch(_){}
+}
+
+/* ===================== 데이터 로드 (IndexedDB 우선, 없으면 폴더 fetch 폴백) ===================== */
+async function loadTranslation(key){
+  if(TRANS_DATA[key]) return TRANS_DATA[key];
+  // 1) 설정에서 불러온 IndexedDB 번역본 우선
+  try{
+    const rec = await AppDB.load('bible:'+key);
+    if(rec && rec.data){ TRANS_DATA[key]=rec.data; return rec.data; }
+  }catch(e){}
+  // 2) 없으면 기존 방식(같은 폴더의 ./bible/*.json, 서버 필요)으로 폴백
+  const item = TRANSLATIONS.find(t=>t.key===key);
+  if(!item) return null;
+  try{
+    const res = await fetch('./bible/'+encodeURIComponent(item.file));
+    if(!res.ok) throw new Error('not found');
+    const data = await res.json();
+    TRANS_DATA[key] = data;
+    return data;
+  }catch(e){
+    return null;
+  }
+}
+async function listStoredBibleKeys(){
+  const recs = await AppDB.listByPrefix('bible:');
+  return recs.map(r=> r.key.slice('bible:'.length));
+}
+async function loadDict(){
+  if(DICT_DATA) return DICT_DATA;
+  DICT_DATA = {};
+  // 1) 설정에서 불러온 사전(최대 3개)을 모두 병합
+  //    (겹치는 단어는 '에스라' 사전이 우선하도록 마지막에 덮어씀)
+  try{
+    const recs = await AppDB.listByPrefix('dict:');
+    if(recs.length){
+      const ezraRecs = recs.filter(r=>r.key.includes('에스라'));
+      const otherRecs = recs.filter(r=>!r.key.includes('에스라'));
+      otherRecs.forEach(r=>{ Object.assign(DICT_DATA, r.data||{}); });
+      ezraRecs.forEach(r=>{ Object.assign(DICT_DATA, r.data||{}); });
+      return DICT_DATA;
+    }
+  }catch(e){}
+  // 2) 없으면 기존 방식으로 폴백
+  try{
+    const res = await fetch(DICT_FILE);
+    DICT_DATA = await res.json();
+  }catch(e){ DICT_DATA = {}; }
+  return DICT_DATA;
+}
+async function loadCmtIndex(){
+  if(CMT_INDEX) return CMT_INDEX;
+  // 1) 설정에서 불러온 합본 주석 우선
+  try{
+    const rec = await AppDB.load('commentary:main');
+    if(rec && rec.data && rec.data.index){
+      CMT_INDEX = rec.data.index;
+      return CMT_INDEX;
+    }
+  }catch(e){}
+  // 2) 없으면 기존 방식(폴더 구조)으로 폴백
+  try{
+    const res = await fetch(CMT_BASE+'index.json');
+    CMT_INDEX = await res.json();
+  }catch(e){ CMT_INDEX = {}; }
+  return CMT_INDEX;
+}
+function hasCommentary(book, chapter, verse){
+  const ranges = CMT_INDEX?.[String(book)]?.[String(chapter)];
+  if(!ranges) return false;
+  return ranges.some(([a,b])=> verse>=a && verse<=b);
+}
+async function loadCmtChapter(book, chapter){
+  const k = book+'_'+chapter;
+  if(CMT_CACHE[k]) return CMT_CACHE[k];
+  // 1) 설정에서 불러온 합본 주석 우선
+  try{
+    const rec = await AppDB.load('commentary:main');
+    if(rec && rec.data && rec.data.data){
+      const data = rec.data.data[k] || [];
+      CMT_CACHE[k] = data;
+      return data;
+    }
+  }catch(e){}
+  // 2) 없으면 기존 방식(폴더 구조)으로 폴백
+  try{
+    const res = await fetch(CMT_BASE+book+'/'+chapter+'.json');
+    const data = await res.json();
+    CMT_CACHE[k] = data;
+    return data;
+  }catch(e){ return []; }
+}
+
+/* ===================== 렌더링 ===================== */
+async function renderChapter(){
+  const scEl = document.getElementById('scripture');
+  scEl.innerHTML = '<div class="load-msg">불러오는 중…</div>';
+
+  const mainData = await loadTranslation(state.mainKey);
+  if(!mainData){
+    scEl.innerHTML = '<div class="load-msg"><b>본문을 불러오지 못했습니다.</b><br>./bible/ 폴더에 해당 파일이 있는지 확인해주세요.<br>서버로 여신 경우 python3 -m http.server 로 접속 중인지도 확인해주세요.</div>';
+    return;
+  }
+  let compData = null;
+  let compareUnavailable = false;
+  if(state.compareOn){
+    compData = await loadTranslation(state.compareKey);
+    if(!compData) compareUnavailable = true;
+  }
+
+  const chData = mainData.verses?.[String(state.book)]?.[String(state.chapter)];
+  await loadCmtIndex();
+
+  if(!chData){
+    scEl.innerHTML = '<div class="load-msg">해당 장 본문이 없습니다.</div>';
+    return;
+  }
+
+  let html = '<div class="chapter-head">'+esc(bookName(state.book))+' '+state.chapter+'장 · '+esc(state.mainKey)+'</div>';
+  if(compareUnavailable){
+    html += '<div class="compare-warning">⚠️ 비교 번역본 <b>'+esc(state.compareKey)+'</b>을(를) 불러올 수 없어 단일 보기로 표시됩니다.<br>설정 ⚙ → 성경 번역본 불러오기에서 해당 번역본 파일을 등록해주세요.</div>';
+  }
+  const verseNums = Object.keys(chData).map(Number).sort((a,b)=>a-b);
+
+  const memoVerses = new Set(loadMemos().map(m=>m.verse));
+  const hlVerses = loadHighlights();
+
+  // 절 복사 기능용: 절번호 클릭 시 복사할 원문 텍스트 매핑, 선택 상태 초기화
+  CURRENT_VERSE_TEXT = {};
+  selectedVerses.clear();
+
+  verseNums.forEach(vn=>{
+    const mainText = chData[String(vn)];
+    CURRENT_VERSE_TEXT[vn] = mainText;
+    const hasMemo = memoVerses.has(vn);
+    const isHl = hlVerses.has(vn);
+    const cmtIcon = hasCommentary(state.book, state.chapter, vn)
+      ? '<span class="vicon cmt-icon" data-cmt-v="'+vn+'"><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg></span>' : '';
+    const memoIcon = '<span class="vicon memo-icon'+(hasMemo?' has-memo':'')+'" data-memo-v="'+vn+'"><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>';
+    const icons = '<span class="verse-icons">'+cmtIcon+memoIcon+'</span>';
+    const rowClass = (hasMemo ? ' has-memo' : '') + (isHl ? ' vhighlight' : '');
+    if(state.compareOn && compData){
+      const compChData = compData.verses?.[String(state.book)]?.[String(state.chapter)];
+      const compText = compChData?.[String(vn)] || '';
+      html += '<div class="verse-pair'+rowClass+'" data-v="'+vn+'">'
+        + '<div class="row"><span class="vnum" data-vnum="'+vn+'">'+vn+'</span><span class="vtext">'+esc(mainText)+icons+'</span></div>'
+        + (compText ? '<div class="row"><span class="vnum"></span><span class="vtext secondary">'+esc(compText)+'</span></div>' : '')
+        + '</div>';
+    } else {
+      html += '<div class="verse'+rowClass+'" data-v="'+vn+'">'
+        + '<span class="vnum" data-vnum="'+vn+'">'+vn+'</span><span class="vtext">'+esc(mainText)+icons+'</span>'
+        + '</div>';
+    }
+  });
+
+  scEl.innerHTML = html;
+  scEl.scrollTop = 0;
+  applyFontSize();
+  buildMemoVerseSelect(verseNums);
+}
+
+function applyFontSize(){
+  document.querySelectorAll('.vtext, .verse-pair .row .vtext').forEach(el=>{
+    el.style.fontSize = (el.classList.contains('secondary') ? state.fontSize-2.5 : state.fontSize) + 'px';
+  });
+  document.querySelectorAll('.vnum').forEach(el=>{
+    el.style.fontSize = state.fontSize + 'px';
+  });
+}
+function applyFontChoice(){
+  const opt = FONT_OPTIONS.find(f=>f.id===state.fontChoice) || FONT_OPTIONS[0];
+  document.documentElement.style.setProperty('--font-serif', opt.family);
+}
+
+/* ===================== 절 하이라이트 ===================== */
+// 한 장(챕터)에서 하이라이트는 항상 한 절만 켜지도록 단일 값으로 저장한다.
+function highlightKeyForChapter(){ return 'hl_'+state.book+'_'+state.chapter; }
+function loadHighlightVerse(){
+  const v = localStorage.getItem(highlightKeyForChapter());
+  return v ? parseInt(v, 10) : null;
+}
+function saveHighlightVerse(vn){
+  if(vn==null){ localStorage.removeItem(highlightKeyForChapter()); }
+  else { localStorage.setItem(highlightKeyForChapter(), String(vn)); }
+}
+function loadHighlights(){
+  const v = loadHighlightVerse();
+  return v==null ? new Set() : new Set([v]);
+}
+function toggleVerseHighlight(containerEl){
+  const vn = parseInt(containerEl.dataset.v, 10);
+  const current = loadHighlightVerse();
+  document.querySelectorAll('.verse.vhighlight, .verse-pair.vhighlight').forEach(el=> el.classList.remove('vhighlight'));
+  if(current === vn){
+    saveHighlightVerse(null);
+  } else {
+    containerEl.classList.add('vhighlight');
+    saveHighlightVerse(vn);
+  }
+}
+
+/* ===================== 절 복사 기능 ===================== */
+// 절번호를 클릭하면 빨간색으로 토글되고, 현재 빨간색으로 선택된 절들을
+// "절번호 본문" 형식(절번호 뒤 한 칸 띄움)으로 한 절씩 줄바꿈하여 클립보드에 복사한다.
+function toggleVerseCopy(vnumEl){
+  const vn = parseInt(vnumEl.dataset.vnum, 10);
+  if(selectedVerses.has(vn)){
+    selectedVerses.delete(vn);
+    vnumEl.classList.remove('copied');
+  } else {
+    selectedVerses.add(vn);
+    vnumEl.classList.add('copied');
+  }
+  if(selectedVerses.size === 0){ return; }
+  const sorted = Array.from(selectedVerses).sort((a,b)=>a-b);
+  const text = sorted.map(vn2 => vn2 + ' ' + (CURRENT_VERSE_TEXT[vn2] || '')).join('\n');
+  copyTextToClipboard(text);
+  showCopyToast(sorted.length===1 ? sorted[0]+'절 복사됨' : sorted.length+'개 절 복사됨');
+}
+function copyTextToClipboard(text){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).catch(()=> fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
+  }
+}
+function fallbackCopy(text){
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.left = '-9999px';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try{ document.execCommand('copy'); }catch(e){}
+  document.body.removeChild(ta);
+}
+function showCopyToast(msg){
+  const toast = document.getElementById('copyToast');
+  if(!toast) return;
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(window.__copyToastTimer);
+  window.__copyToastTimer = setTimeout(()=> toast.classList.remove('show'), 1400);
+}
+
+/* ===================== 위치버튼 + 범위/책/장/절 4단 피커 ===================== */
+const JUMP_ANCHORS = [1,11,19,28,40,51,66]; // 창/왕상/시/호/마/골/계
+let pk = {book:1, chapter:1, verse:1, filter:'all'}; // 피커 임시 선택 상태
+
+function updateLocBtn(){
+  document.getElementById('locBtn').textContent = bookName(state.book)+' '+state.chapter+'장';
+}
+function verseCountOf(book, chapter){
+  const md = TRANS_DATA[state.mainKey];
+  const ch = md?.verses?.[String(book)]?.[String(chapter)];
+  return ch ? Object.keys(ch).length : 30;
+}
+function openLocSheet(){
+  pk.book = state.book; pk.chapter = state.chapter; pk.verse = 1; pk.filter='all';
+  renderPkRange(); renderPkBook(); renderPkChapter(); renderPkVerse(); updatePkConfirmText();
+  document.getElementById('locBackdrop').classList.add('show');
+  document.getElementById('locSheet').classList.add('show');
+}
+function closeLocSheet(){
+  document.getElementById('locBackdrop').classList.remove('show');
+  document.getElementById('locSheet').classList.remove('show');
+}
+function renderPkRange(){
+  let html = '<div class="pk-item range-btn'+(pk.filter==='all'?' active':'')+'" data-range="all">모두</div>'
+    + '<div class="pk-item range-btn'+(pk.filter==='ot'?' active':'')+'" data-range="ot">구약</div>'
+    + '<div class="pk-item range-btn'+(pk.filter==='nt'?' active':'')+'" data-range="nt">신약</div>'
+    + '<div class="pk-item range-label">점프</div>';
+  JUMP_ANCHORS.forEach(b=>{
+    html += '<div class="pk-item" data-jump="'+b+'">'+esc(bookName(b))+'</div>';
+  });
+  document.getElementById('pkRange').innerHTML = html;
+}
+function renderPkBook(){
+  const range = pk.filter==='ot' ? [1,39] : pk.filter==='nt' ? [40,66] : [1,66];
+  let html='';
+  for(let b=range[0]; b<=range[1]; b++){
+    html += '<div class="pk-item'+(b===pk.book?' active':'')+'" data-book="'+b+'">'+esc(bookName(b))+'</div>';
+  }
+  const col = document.getElementById('pkBook');
+  col.innerHTML = html;
+  const activeEl = col.querySelector('.pk-item.active');
+  if(activeEl) activeEl.scrollIntoView({block:'center'});
+}
+function renderPkChapter(){
+  const n = CHAPTER_COUNT[pk.book]||50;
+  let html='';
+  for(let c=1;c<=n;c++){
+    html += '<div class="pk-item'+(c===pk.chapter?' active':'')+'" data-chapter="'+c+'">'+c+'</div>';
+  }
+  const col = document.getElementById('pkChapter');
+  col.innerHTML = html;
+  const activeEl = col.querySelector('.pk-item.active');
+  if(activeEl) activeEl.scrollIntoView({block:'center'});
+}
+function renderPkVerse(){
+  const n = verseCountOf(pk.book, pk.chapter);
+  let html='';
+  for(let v=1; v<=n; v++){
+    html += '<div class="pk-item'+(v===pk.verse?' active':'')+'" data-verse="'+v+'">'+v+'</div>';
+  }
+  const col = document.getElementById('pkVerse');
+  col.innerHTML = html;
+  const activeEl = col.querySelector('.pk-item.active');
+  if(activeEl) activeEl.scrollIntoView({block:'center'});
+}
+function updatePkConfirmText(){
+  document.getElementById('locConfirmBtn').textContent = bookName(pk.book)+' '+pk.chapter+':'+pk.verse+' 선택';
+}
+async function fillTransSelects(){
+  const ck = document.getElementById('compareTransSel');
+  const builtinKeys = TRANSLATIONS.map(t=>t.key);
+  const storedKeys = await listStoredBibleKeys();
+  const allKeys = builtinKeys.concat(storedKeys.filter(k=> builtinKeys.indexOf(k)===-1));
+  const opts = k=>'<option value="'+esc(k)+'">'+esc(k)+'</option>';
+  ck.innerHTML = allKeys.map(opts).join('');
+  ck.value = state.compareKey;
+
+  MAIN_TRANS_KEYS = allKeys;
+  setMainTransBtnLabel();
+  renderMainTransMenu();
+}
+function setMainTransBtnLabel(){
+  document.getElementById('mainTransBtn').innerHTML = esc(state.mainKey)+'<span class="trans-caret">▾</span>';
+}
+function renderMainTransMenu(){
+  const menu = document.getElementById('mainTransMenu');
+  menu.innerHTML = MAIN_TRANS_KEYS.map(k=>
+    '<div class="trans-menu-item'+(k===state.mainKey?' active':'')+'" data-key="'+esc(k)+'">'+esc(k)+'</div>'
+  ).join('');
+}
+function openMainTransMenu(){
+  const btn = document.getElementById('mainTransBtn');
+  const menu = document.getElementById('mainTransMenu');
+  const topbar = document.getElementById('topbar');
+  renderMainTransMenu();
+  const r = btn.getBoundingClientRect();
+  const topbarRect = topbar.getBoundingClientRect();
+  menu.style.display = 'block'; // measure first
+  const menuW = menu.offsetWidth;
+  let left = r.left;
+  if(left + menuW > window.innerWidth - 12) left = window.innerWidth - 12 - menuW;
+  if(left < 12) left = 12;
+  menu.style.left = left + 'px';
+  menu.style.top = (topbarRect.bottom + 8) + 'px';
+  menu.classList.add('show');
+}
+function closeMainTransMenu(){
+  const menu = document.getElementById('mainTransMenu');
+  menu.classList.remove('show');
+  menu.style.display = '';
+}
+
+/* ===================== 주석 시트 ===================== */
+async function openCmtSheet(verse){
+  document.getElementById('cmtBackdrop').classList.add('show');
+  document.getElementById('cmtSheet').classList.add('show');
+  document.getElementById('cmtTitle').textContent = bookName(state.book)+' '+state.chapter+':'+verse+' 주석';
+  document.getElementById('cmtBody').innerHTML = '불러오는 중…';
+  const chapterData = await loadCmtChapter(state.book, state.chapter);
+  const entry = (chapterData||[]).find(e=> verse>=e.fromverse && verse<=e.toverse);
+  document.getElementById('cmtBody').innerHTML = entry ? entry.data : '해당 절 주석이 없습니다.';
+}
+function closeCmtSheet(){
+  document.getElementById('cmtBackdrop').classList.remove('show');
+  document.getElementById('cmtSheet').classList.remove('show');
+}
+
+/* ===================== 사전 팝업 ===================== */
+function findDictEntry(text){
+  if(!DICT_DATA) return null;
+  if(DICT_DATA[text]) return {word:text, html:DICT_DATA[text]};
+  // 조사가 붙은 경우 대비: 앞부분이 표제어와 일치하는 가장 긴 매칭 탐색
+  for(let len=text.length-1; len>=2; len--){
+    const cand = text.slice(0, len);
+    if(DICT_DATA[cand]) return {word:cand, html:DICT_DATA[cand]};
+  }
+  return null;
+}
+async function handleSelection(){
+  const sel = window.getSelection();
+  const text = sel && sel.toString().trim();
+  if(!text || text.length===0 || text.length>14){ hideDictPop(); return; }
+  await loadDict();
+  const found = findDictEntry(text);
+  if(!found){ hideDictPop(); return; }
+  try{
+    const range = sel.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    showDictPop(found.word, found.html, rect);
+  }catch(e){ hideDictPop(); }
+}
+function showDictPop(word, html, rect){
+  const pop = document.getElementById('dictPop');
+  document.getElementById('dictWord').textContent = word;
+  document.getElementById('dictBody').innerHTML = html;
+  pop.classList.add('show');
+  const popW = 320, popH = Math.min(280, pop.scrollHeight||200);
+  let left = rect.left + rect.width/2 - popW/2;
+  left = Math.max(10, Math.min(left, window.innerWidth-popW-10));
+  let top = rect.bottom + 10;
+  if(top + popH > window.innerHeight-20){ top = rect.top - popH - 10; }
+  pop.style.left = left+'px';
+  pop.style.top = Math.max(60,top)+'px';
+}
+function hideDictPop(){ document.getElementById('dictPop').classList.remove('show'); }
+
+/* ===================== 메모 ===================== */
+function memoKeyForChapter(){ return 'memo_'+state.book+'_'+state.chapter; }
+function loadMemos(){
+  try{ return JSON.parse(localStorage.getItem(memoKeyForChapter())||'[]'); }catch(_){ return []; }
+}
+function saveMemos(arr){ localStorage.setItem(memoKeyForChapter(), JSON.stringify(arr)); }
+function buildMemoVerseSelect(verseNums){
+  const sel = document.getElementById('memoVerseSel');
+  sel.innerHTML = verseNums.map(v=>'<option value="'+v+'">'+v+'절</option>').join('');
+}
+function renderMemoList(){
+  const list = loadMemos();
+  const el = document.getElementById('memoList');
+  if(list.length===0){ el.innerHTML = '<div style="color:var(--ink-soft); font-size:13.5px; text-align:center; padding:14px 0;">이 장에 저장된 메모가 없습니다.</div>'; return; }
+  el.innerHTML = list.map((m,i)=>
+    '<div class="memo-item">'
+    +'<div class="head"><span class="meta">'+m.verse+'절</span><span class="del" data-i="'+i+'">삭제</span></div>'
+    +'<div class="txt">'+esc(m.text)+'</div></div>'
+  ).join('');
+}
+function openMemoSheet(verse){
+  renderMemoList();
+  if(verse){ document.getElementById('memoVerseSel').value = verse; }
+  document.getElementById('memoBackdrop').classList.add('show');
+  document.getElementById('memoSheet').classList.add('show');
+}
+function closeMemoSheet(){
+  document.getElementById('memoBackdrop').classList.remove('show');
+  document.getElementById('memoSheet').classList.remove('show');
+}
+function updateMemoIcons(){
+  const memoVerses = new Set(loadMemos().map(m=>m.verse));
+  document.querySelectorAll('.memo-icon').forEach(el=>{
+    const v = parseInt(el.dataset.memoV);
+    el.classList.toggle('has-memo', memoVerses.has(v));
+  });
+  document.querySelectorAll('.verse[data-v], .verse-pair[data-v]').forEach(el=>{
+    const v = parseInt(el.dataset.v);
+    el.classList.toggle('has-memo', memoVerses.has(v));
+  });
+}
+
+/* ===================== 설정 시트 ===================== */
+function readFileAsText(file){
+  return new Promise((res, rej)=>{
+    const reader = new FileReader();
+    reader.onload = e=>{
+      let text = e.target.result;
+      if(text.charCodeAt(0)===0xFEFF) text = text.slice(1); // BOM 제거 (윈도우 메모장 저장 파일 대응)
+      res(text);
+    };
+    reader.onerror = ()=> rej(new Error('읽기 실패'));
+    reader.readAsText(file, 'UTF-8');
+  });
+}
+function openSettingsSheet(){
+  document.getElementById('settingsBackdrop').classList.add('show');
+  document.getElementById('settingsSheet').classList.add('show');
+  refreshSettingsLists();
+  renderFontChoices();
+  renderCompareModeRow();
+}
+function closeSettingsSheet(){
+  document.getElementById('settingsBackdrop').classList.remove('show');
+  document.getElementById('settingsSheet').classList.remove('show');
+}
+async function refreshSettingsLists(){
+  // 번역본 목록
+  const bibleRecs = await AppDB.listByPrefix('bible:');
+  const bibleEl = document.getElementById('bibleList');
+  bibleEl.innerHTML = bibleRecs.length ? bibleRecs.map(r=>{
+    const name = r.key.slice('bible:'.length);
+    return '<div class="settings-list-item"><span class="name">'+esc(name)+'</span><span class="remove" data-remove-bible="'+esc(r.key)+'">삭제</span></div>';
+  }).join('') : '<div class="settings-empty">등록된 번역본이 없습니다</div>';
+
+  // 주석 목록
+  const cmtRec = await AppDB.load('commentary:main');
+  const cmtEl = document.getElementById('cmtList');
+  cmtEl.innerHTML = cmtRec ? '<div class="settings-list-item"><span class="name">'+esc(cmtRec.meta?.fileName||'주석 파일')+'</span><span class="remove" data-remove-cmt="1">삭제</span></div>' : '<div class="settings-empty">등록된 주석이 없습니다</div>';
+
+  // 사전 목록
+  const dictRecs = await AppDB.listByPrefix('dict:');
+  const dictEl = document.getElementById('dictList');
+  dictEl.innerHTML = dictRecs.length ? dictRecs.map(r=>{
+    const name = r.key.slice('dict:'.length);
+    return '<div class="settings-list-item"><span class="name">'+esc(name)+'</span><span class="remove" data-remove-dict="'+esc(r.key)+'">삭제</span></div>';
+  }).join('') : '<div class="settings-empty">등록된 사전이 없습니다</div>';
+}
+function renderFontChoices(){
+  const row = document.getElementById('fontChoiceRow');
+  row.innerHTML = FONT_OPTIONS.map(f=>
+    '<button type="button" class="font-choice-btn'+(state.fontChoice===f.id?' active':'')+'" data-font="'+f.id+'" style="font-family:'+f.family+'">'+esc(f.label)+'</button>'
+  ).join('');
+}
+function renderCompareModeRow(){
+  const row = document.getElementById('compareModeRow');
+  row.querySelectorAll('.font-choice-btn').forEach(btn=>{
+    const isDouble = btn.dataset.compare === 'double';
+    btn.classList.toggle('active', state.compareOn === isDouble);
+  });
+  document.getElementById('compareTransSel').style.display = state.compareOn ? '' : 'none';
+}
+async function handleBibleFiles(fileList){
+  for(const file of Array.from(fileList)){
+    try{
+      const text = await readFileAsText(file);
+      const data = JSON.parse(text);
+      const name = file.name.replace(/\.json$/i,'');
+      await AppDB.save('bible:'+name, data, {fileName:file.name});
+      delete TRANS_DATA[name]; // 캐시 초기화
+    }catch(err){
+      console.error('번역본 등록 실패:', file.name, err);
+      alert(file.name+' 불러오기 실패: '+err.message);
+    }
+  }
+  await refreshSettingsLists();
+  await fillTransSelects();
+}
+async function handleCmtFile(file){
+  try{
+    const text = await readFileAsText(file);
+    const data = JSON.parse(text);
+    if(!data.index || !data.data) throw new Error('주석 파일 형식이 올바르지 않습니다 (index/data 필요)');
+    await AppDB.save('commentary:main', data, {fileName:file.name});
+    CMT_INDEX = null; // 캐시 초기화
+    Object.keys(CMT_CACHE).forEach(k=> delete CMT_CACHE[k]);
+  }catch(err){
+    console.error('주석 등록 실패:', file.name, err);
+    alert('주석 불러오기 실패: '+err.message);
+  }
+  await refreshSettingsLists();
+}
+async function handleDictFiles(fileList){
+  const files = Array.from(fileList); // await 전에 즉시 배열로 복사(입력값 초기화로 인한 유실 방지)
+  let existing = [];
+  try{
+    existing = await AppDB.listByPrefix('dict:');
+  }catch(err){
+    console.error('사전 목록 조회 실패', err);
+    alert('사전 저장소를 여는 데 실패했습니다: '+err.message);
+    await refreshSettingsLists();
+    return;
+  }
+  let count = existing.length;
+  for(const file of files){
+    if(count>=3){ alert('사전은 최대 3개까지 등록할 수 있습니다.'); break; }
+    try{
+      const text = await readFileAsText(file);
+      const data = JSON.parse(text);
+      if(!data || typeof data!=='object' || Array.isArray(data)){
+        throw new Error('사전 파일 형식이 올바르지 않습니다 ({"단어":"설명", ...} 형태의 JSON 객체여야 합니다)');
+      }
+      const name = file.name.replace(/\.json$/i,'');
+      await AppDB.save('dict:'+name, data, {fileName:file.name});
+      count++;
+    }catch(err){
+      console.error('사전 등록 실패:', file.name, err);
+      alert(file.name+' 불러오기 실패: '+err.message);
+    }
+  }
+  DICT_DATA = null; // 캐시 초기화
+  await refreshSettingsLists();
+}
+function exportMemos(){
+  const bundle = {};
+  for(let i=0;i<localStorage.length;i++){
+    const k = localStorage.key(i);
+    if(k && k.indexOf('memo_')===0) bundle[k] = JSON.parse(localStorage.getItem(k));
+  }
+  const blob = new Blob([JSON.stringify(bundle, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const d = new Date();
+  const ymd = d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
+  a.href = url; a.download = '메모_백업_'+ymd+'.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ===================== 이벤트 바인딩 ===================== */
+function confirmLocSelection(){
+  state.book = pk.book; state.chapter = pk.chapter;
+  const targetVerse = pk.verse;
+  closeLocSheet(); updateLocBtn(); saveState();
+  renderChapter().then(()=>{
+    document.querySelectorAll('.jump-highlight').forEach(el=> el.classList.remove('jump-highlight'));
+    const vEl = document.querySelector('.verse[data-v="'+targetVerse+'"], .verse-pair[data-v="'+targetVerse+'"]');
+    if(vEl){
+      vEl.scrollIntoView({block:'start'});
+      vEl.classList.add('jump-highlight');
+    }
+  });
+}
+function bindEvents(){
+  document.getElementById('locBtn').onclick = openLocSheet;
+  document.getElementById('locBackdrop').onclick = closeLocSheet;
+  document.getElementById('locCancelBtn').onclick = closeLocSheet;
+  document.getElementById('locConfirmBtn').onclick = confirmLocSelection;
+  document.addEventListener('click', (e)=>{
+    const sheet = document.getElementById('locSheet');
+    if(!sheet.classList.contains('show')) return;
+    if(sheet.contains(e.target) || e.target.closest('#locBtn')) return;
+    closeLocSheet();
+  });
+  document.getElementById('pkRange').addEventListener('click', (e)=>{
+    const rangeBtn = e.target.closest('[data-range]');
+    if(rangeBtn){ pk.filter = rangeBtn.dataset.range; renderPkRange(); renderPkBook(); return; }
+    const jumpBtn = e.target.closest('[data-jump]');
+    if(jumpBtn){
+      const b = parseInt(jumpBtn.dataset.jump);
+      const el = document.querySelector('#pkBook [data-book="'+b+'"]');
+      if(el) el.scrollIntoView({block:'center'});
+    }
+  });
+  document.getElementById('pkBook').addEventListener('click', (e)=>{
+    const cell = e.target.closest('[data-book]');
+    if(!cell) return;
+    pk.book = parseInt(cell.dataset.book); pk.chapter=1; pk.verse=1;
+    renderPkBook(); renderPkChapter(); renderPkVerse(); updatePkConfirmText();
+  });
+  document.getElementById('pkChapter').addEventListener('click', (e)=>{
+    const cell = e.target.closest('[data-chapter]');
+    if(!cell) return;
+    pk.chapter = parseInt(cell.dataset.chapter); pk.verse=1;
+    renderPkChapter(); renderPkVerse(); updatePkConfirmText();
+  });
+  document.getElementById('pkVerse').addEventListener('click', (e)=>{
+    const cell = e.target.closest('[data-verse]');
+    if(!cell) return;
+    pk.verse = parseInt(cell.dataset.verse);
+    renderPkVerse(); updatePkConfirmText();
+    confirmLocSelection();
+  });
+
+  document.getElementById('fontBtn').onclick = ()=> document.getElementById('fontPop').classList.toggle('show');
+  document.addEventListener('click', (e)=>{
+    const pop = document.getElementById('fontPop');
+    if(!pop.classList.contains('show')) return;
+    if(pop.contains(e.target) || e.target.closest('#fontBtn')) return;
+    pop.classList.remove('show');
+  });
+  document.getElementById('fontUp').onclick = ()=>{ state.fontSize=Math.min(28,state.fontSize+1); applyFontSize(); saveState(); };
+  document.getElementById('fontDown').onclick = ()=>{ state.fontSize=Math.max(14,state.fontSize-1); applyFontSize(); saveState(); };
+
+  document.getElementById('mainTransBtn').onclick = ()=>{
+    const menu = document.getElementById('mainTransMenu');
+    if(menu.classList.contains('show')){ closeMainTransMenu(); } else { openMainTransMenu(); }
+  };
+  document.getElementById('mainTransMenu').addEventListener('click', (e)=>{
+    const item = e.target.closest('[data-key]');
+    if(!item) return;
+    state.mainKey = item.dataset.key;
+    setMainTransBtnLabel();
+    saveState(); closeMainTransMenu(); renderChapter();
+  });
+  document.addEventListener('click', (e)=>{
+    const menu = document.getElementById('mainTransMenu');
+    if(!menu.classList.contains('show')) return;
+    if(menu.contains(e.target) || e.target.closest('#mainTransBtn')) return;
+    closeMainTransMenu();
+  });
+  document.getElementById('compareTransSel').onchange = (e)=>{ state.compareKey=e.target.value; saveState(); renderChapter(); };
+  document.getElementById('hymnBtn').onclick = ()=>{
+    // TODO: 찬송가 앱 파일이 준비되면 아래 경로를 실제 파일명으로 바꿔주세요.
+    window.open('./찬송가.html', '_blank');
+  };
+
+  document.getElementById('settingsBtn').onclick = openSettingsSheet;
+  document.getElementById('settingsClose').onclick = closeSettingsSheet;
+  document.getElementById('settingsBackdrop').onclick = closeSettingsSheet;
+  document.getElementById('fileBible').onchange = (e)=>{ if(e.target.files.length) handleBibleFiles(e.target.files); e.target.value=''; };
+  document.getElementById('fileCmt').onchange = (e)=>{ if(e.target.files[0]) handleCmtFile(e.target.files[0]); e.target.value=''; };
+  document.getElementById('fileDict').onchange = (e)=>{ if(e.target.files.length) handleDictFiles(e.target.files); e.target.value=''; };
+  document.getElementById('bibleList').addEventListener('click', async (e)=>{
+    const btn = e.target.closest('[data-remove-bible]');
+    if(!btn) return;
+    await AppDB.remove(btn.dataset.removeBible);
+    delete TRANS_DATA[btn.dataset.removeBible.slice('bible:'.length)];
+    await refreshSettingsLists(); await fillTransSelects();
+  });
+  document.getElementById('cmtList').addEventListener('click', async (e)=>{
+    if(!e.target.closest('[data-remove-cmt]')) return;
+    await AppDB.remove('commentary:main');
+    CMT_INDEX = null; Object.keys(CMT_CACHE).forEach(k=> delete CMT_CACHE[k]);
+    await refreshSettingsLists();
+  });
+  document.getElementById('dictList').addEventListener('click', async (e)=>{
+    const btn = e.target.closest('[data-remove-dict]');
+    if(!btn) return;
+    await AppDB.remove(btn.dataset.removeDict);
+    DICT_DATA = null;
+    await refreshSettingsLists();
+  });
+  document.getElementById('fontChoiceRow').addEventListener('click', (e)=>{
+    const btn = e.target.closest('[data-font]');
+    if(!btn) return;
+    state.fontChoice = btn.dataset.font;
+    saveState(); applyFontChoice(); renderFontChoices();
+  });
+  document.getElementById('compareModeRow').addEventListener('click', (e)=>{
+    const btn = e.target.closest('[data-compare]');
+    if(!btn) return;
+    state.compareOn = (btn.dataset.compare === 'double');
+    saveState(); renderCompareModeRow(); renderChapter();
+  });
+  document.getElementById('exportMemoBtn').onclick = exportMemos;
+
+  document.getElementById('scripture').addEventListener('click', (e)=>{
+    const icon = e.target.closest('.cmt-icon');
+    if(icon){ openCmtSheet(parseInt(icon.dataset.cmtV)); return; }
+    const memoIcon = e.target.closest('.memo-icon');
+    if(memoIcon){ openMemoSheet(parseInt(memoIcon.dataset.memoV)); return; }
+    const vnumEl = e.target.closest('.vnum[data-vnum]');
+    if(vnumEl){ toggleVerseCopy(vnumEl); return; }
+    const vtextEl = e.target.closest('.vtext');
+    if(vtextEl){
+      const sel = window.getSelection();
+      if(sel && sel.toString().trim().length>0) return; // 드래그로 텍스트 선택 중이면 하이라이트 토글 안 함
+      const container = e.target.closest('.verse[data-v], .verse-pair[data-v]');
+      if(container){ toggleVerseHighlight(container); }
+    }
+  });
+  document.getElementById('cmtClose').onclick = closeCmtSheet;
+  document.getElementById('cmtBackdrop').onclick = closeCmtSheet;
+
+  document.addEventListener('selectionchange', ()=>{
+    clearTimeout(window.__selTimer);
+    window.__selTimer = setTimeout(handleSelection, 250);
+  });
+  document.getElementById('dictClose').onclick = hideDictPop;
+  document.addEventListener('touchstart', (e)=>{
+    if(!e.target.closest('#dictPop')) hideDictPop();
+  }, {passive:true});
+
+  document.getElementById('memoClose').onclick = closeMemoSheet;
+  document.getElementById('memoBackdrop').onclick = closeMemoSheet;
+  document.getElementById('memoSaveBtn').onclick = ()=>{
+    const v = parseInt(document.getElementById('memoVerseSel').value);
+    const t = document.getElementById('memoText').value.trim();
+    if(!t) return;
+    const list = loadMemos();
+    list.push({verse:v, text:t, ts:Date.now()});
+    saveMemos(list);
+    document.getElementById('memoText').value='';
+    renderMemoList();
+    updateMemoIcons();
+  };
+  document.getElementById('memoList').addEventListener('click', (e)=>{
+    const del = e.target.closest('.del');
+    if(!del) return;
+    const list = loadMemos();
+    list.splice(parseInt(del.dataset.i),1);
+    saveMemos(list);
+    renderMemoList();
+    updateMemoIcons();
+  });
+}
+
+/* ===================== 초기화 ===================== */
+async function init(){
+  loadState();
+  await fillTransSelects();
+  applyFontChoice();
+  updateLocBtn();
+  bindEvents();
+  await loadTranslation(state.mainKey);
+  await renderChapter();
+}
+init();
+</script>
+</body>
+</html>
