@@ -136,6 +136,7 @@
       <div id="worshipMenu"></div>
     </div>
     <div class="tab" id="bibleLinkBtn" onclick="window.open('./성경읽기_mobile.html','_blank')" title="성경 읽기">📖 성경</div>
+    <div class="tab" id="homeBtn" style="flex:0 0 40px; font-size:16px;" onclick="goHomeApp()" title="홈">🏠</div>
   </div>
 
   <div id="subheader">
@@ -194,6 +195,29 @@ const HYMN_CATS = {"예배":{"송영":[{"n":1,"t":"만복의 근원 하나님"},
 //  찬송가 · 교독문 · 예배자료 통합 뷰어
 //  서버 없이 파일선택 + IndexedDB 로 작동
 // ══════════════════════════════════════════════
+
+/* ===================== 홈으로 이동 =====================
+   대문.html의 iframe 안에서 열린 경우: 부모창에 메시지를 보내 홈으로 이동시킨다.
+   그 외(성경읽기에서 새 탭으로 열었거나, 주소창/북마크로 바로 연 경우):
+   같은 폴더의 대문.html로 직접 이동한다.
+*/
+function goHomeApp(){
+  try{
+    if(window.top !== window.self){
+      window.parent.postMessage({action:'goHome'}, '*');
+      return;
+    }
+  }catch(_){}
+  location.href = './대문.html';
+}
+// 독립 탭(대문.html의 iframe이 아닌 경우)에서만 자체 히스토리를 쌓아
+// 기기의 물리적 뒤로가기를 누르면 홈으로 이동하게 한다.
+try{
+  if(window.top === window.self){
+    history.pushState({page:'찬송가'}, '', '');
+    window.addEventListener('popstate', function(){ goHomeApp(); });
+  }
+}catch(_){}
 
 let currentTab = 'hymn';
 let hymnCurrent = 1;
