@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<meta name="color-scheme" content="light only">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
 <title>찬송가·교독문·예배자료</title>
 <style>
@@ -20,7 +21,7 @@
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0; padding:0; height:100%; background:var(--white); color:var(--ink);
-    font-family:'Nanum Gothic','Malgun Gothic',sans-serif; overscroll-behavior:none;}
+    font-family:'Nanum Gothic','Malgun Gothic',sans-serif; overscroll-behavior:none; color-scheme:light;}
   .display{font-family:'Nanum Myeongjo','Batang',serif;}
 
   #app{display:flex; flex-direction:column; height:100vh; height:100dvh; max-width:520px; margin:0 auto; background:var(--white); box-shadow:0 0 24px rgba(0,0,0,.06); position:relative;}
@@ -37,6 +38,16 @@
   #worshipMenu.open{display:block;}
   #worshipMenu .wm-item{padding:12px 16px; font-size:14.5px; font-weight:700; color:var(--ink); border-bottom:1px solid var(--parchment-deep);}
   #worshipMenu .wm-item:last-child{border-bottom:none;}
+
+  /* ── 본문 영역 플로팅 홈 버튼 ── */
+  #homeBtn{
+    position:absolute; right:14px; bottom:calc(18px + env(safe-area-inset-bottom, 0px)); z-index:40;
+    width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    background:rgba(27,42,82,0.18); color:rgba(27,42,82,0.65); font-size:16px;
+    box-shadow:none; backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px); cursor:pointer;
+    transition:background .12s ease, transform .12s ease;
+  }
+  #homeBtn:active{background:rgba(27,42,82,0.32); transform:scale(0.94);}
   #worshipMenu .wm-item.disabled{color:#b7bec4;}
   #worshipMenu .wm-item.current{background:var(--gold-soft); color:var(--ink);}
   #worshipMenu .wm-badge{font-size:11px; color:#b7bec4; margin-left:6px; font-weight:400;}
@@ -65,7 +76,7 @@
 
   /* ── 공통 헤더(검색/네비) ── */
   #subheader{flex-shrink:0; padding:6px 14px; background:var(--parchment-deep); border-bottom:1px solid var(--line);
-    display:none; align-items:center; gap:6px;}
+    display:none; align-items:center; gap:6px; position:relative;}
   #subheader.open{display:flex;}
   #searchToggleBtn.open{background:rgba(255,255,255,.12); border-radius:8px;}
   #bibleLinkBtn{flex:0 0 auto; padding:14px 12px 12px; font-size:13.5px; font-weight:800; color:#F0C75E;
@@ -110,11 +121,24 @@
   .ln.green{color:var(--olive); font-style:italic; font-weight:700; font-size:15.5px; max-width:100%; padding:9px 0;}
   .empty-note{padding:40px 20px; text-align:center; color:var(--ink-soft); font-size:14.5px; line-height:2;}
 
-  /* 교독문(읽기) 전용 폰트 축소 */
-  #readingBody .ln.black{font-size:14px;}
-  #readingBody .ln.blue{font-size:14px;}
-  #readingBody .ln.red{font-size:15px;}
-  #readingBody .ln.green{font-size:13.5px;}
+  /* 교독문(읽기) 전용 폰트 축소 (배율 조절 가능) */
+  #readingBody{--rfs:1;}
+  #readingBody .ln.black{font-size:calc(14px * var(--rfs));}
+  #readingBody .ln.blue{font-size:calc(14px * var(--rfs));}
+  #readingBody .ln.red{font-size:calc(15px * var(--rfs));}
+  #readingBody .ln.green{font-size:calc(13.5px * var(--rfs));}
+
+  /* 폰트 크기 조절 버튼 + 팝오버 */
+  #fontBtn{flex-shrink:0; width:30px; height:30px; border-radius:8px; border:1.5px solid var(--line);
+    background:var(--white); color:var(--ink); font-size:13px; font-weight:800; display:flex; align-items:center; justify-content:center;
+    cursor:pointer;}
+  #fontBtn:active{background:var(--gold-soft);}
+  #fontPop{display:none; position:absolute; top:100%; right:10px; margin-top:2px; background:var(--white);
+    border-radius:10px; box-shadow:0 10px 26px rgba(0,0,0,.28); padding:8px; gap:8px; z-index:60;}
+  #fontPop.show{display:flex;}
+  #fontPop button{width:38px; height:38px; border-radius:8px; border:1px solid var(--line); background:var(--white);
+    font-size:15px; font-weight:800; color:var(--ink);}
+  #fontPop button:active{background:var(--gold-soft);}
 
   /* 예배자료 드롭다운 방식 */
 
@@ -136,7 +160,6 @@
       <div id="worshipMenu"></div>
     </div>
     <div class="tab" id="bibleLinkBtn" onclick="window.open('./성경읽기_mobile.html','_blank')" title="성경 읽기">📖 성경</div>
-    <div class="tab" id="homeBtn" style="flex:0 0 40px; font-size:16px;" onclick="goHomeApp()" title="홈">🏠</div>
   </div>
 
   <div id="subheader">
@@ -145,8 +168,15 @@
     <button id="goBtn" onclick="goSearch()">이동</button>
     <select id="jumpSelect" onchange="jumpSelectChange(this.value)"></select>
     <button id="hymnFindBtn" onclick="openHymnFinder()" style="display:none;">🔍 찾기</button>
+    <button id="fontBtn" onclick="toggleFontPop(event)" title="글자 크기" style="display:none;">Aa</button>
     <div id="nextBtn" class="navbtn" onclick="stepNav(1)">›</div>
+    <div id="fontPop">
+      <button id="fontDown" onclick="changeReadingFont(-1)">가-</button>
+      <button id="fontUp" onclick="changeReadingFont(1)">가+</button>
+    </div>
   </div>
+
+  <div id="homeBtn" onclick="goHomeApp()" title="홈">🏠</div>
 
   <div id="content">
 
@@ -259,11 +289,13 @@ function switchTab(tab){
   const jumpSel=document.getElementById('jumpSelect');
   const findBtn=document.getElementById('hymnFindBtn');
   const searchToggleBtn=document.getElementById('searchToggleBtn');
+  const fontBtn=document.getElementById('fontBtn');
 
   if(tab==='worship'){
     prevBtn.style.display='none'; nextBtn.style.display='none';
     search.style.display='none'; goBtn.style.display='none'; jumpSel.style.display='none'; findBtn.style.display='none';
     searchToggleBtn.style.display='none';
+    fontBtn.style.display='none'; closeFontPop();
     document.getElementById('subheader').classList.remove('open');
     searchToggleBtn.classList.remove('active');
     searchToggleBtn.classList.remove('open');
@@ -276,8 +308,10 @@ function switchTab(tab){
     search.value='';
     if(tab==='hymn'){
       jumpSel.style.display='none'; findBtn.style.display='';
+      fontBtn.style.display='none'; closeFontPop();
     } else {
       jumpSel.style.display=''; findBtn.style.display='none';
+      fontBtn.style.display='';
       populateJumpSelect(tab);
     }
   }
@@ -409,6 +443,40 @@ function renderWorshipDetail(){
   document.getElementById('worshipBody').innerHTML = v ? renderLines(v.lines) : '<div class="empty-note">준비 중입니다.</div>';
 }
 function selectWorshipVer(i){ worshipVerIdx = i; renderWorshipDetail(); }
+
+// ══════════════════════════════════════
+// 교독문 폰트 크기 조절
+// ══════════════════════════════════════
+const FONT_STEP = 0.1, FONT_MIN = 0.7, FONT_MAX = 1.6;
+let readingFontScale = 1;
+(function loadReadingFontScale(){
+  try{
+    const saved = parseFloat(localStorage.getItem('reading_font_scale'));
+    if(!isNaN(saved)) readingFontScale = saved;
+  }catch(_){}
+})();
+function applyReadingFontScale(){
+  document.getElementById('readingBody').style.setProperty('--rfs', readingFontScale.toFixed(2));
+}
+function changeReadingFont(dir){
+  readingFontScale = Math.round(Math.min(FONT_MAX, Math.max(FONT_MIN, readingFontScale + dir*FONT_STEP)) * 100) / 100;
+  applyReadingFontScale();
+  try{ localStorage.setItem('reading_font_scale', readingFontScale); }catch(_){}
+}
+function toggleFontPop(e){
+  e.stopPropagation();
+  document.getElementById('fontPop').classList.toggle('show');
+}
+function closeFontPop(){
+  document.getElementById('fontPop').classList.remove('show');
+}
+document.addEventListener('click', (e)=>{
+  const pop = document.getElementById('fontPop');
+  if(!pop.classList.contains('show')) return;
+  if(pop.contains(e.target) || e.target.closest('#fontBtn')) return;
+  closeFontPop();
+});
+applyReadingFontScale();
 
 // ══════════════════════════════════════
 // 찬송가 찾기 (제목 검색 + 카테고리별 탐색)

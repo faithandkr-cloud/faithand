@@ -124,6 +124,14 @@ select{font-family:inherit;}
 #copyToast.show{opacity:1; transform:translateX(-50%) translateY(0);}
 
 
+/* ===== 본문 영역 플로팅 홈 버튼 ===== */
+#homeBtn{
+  position:absolute; right:14px; bottom:calc(18px + var(--safe-bottom)); z-index:40;
+  width:44px; height:44px; border-radius:50%; background:rgba(27,42,82,0.18); color:rgba(27,42,82,0.65);
+  box-shadow:none; backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px); flex-shrink:0;
+}
+#homeBtn:active{background:rgba(27,42,82,0.32); transform:scale(0.94);}
+
 /* ===== 폰트크기 조절 팝오버 ===== */
 #fontPop{
   position:fixed; top:64px; right:12px; background:var(--bg-elevated); border-radius:12px;
@@ -272,7 +280,6 @@ select{font-family:inherit;}
 <div id="app">
   <div id="topbar">
     <div id="topbar-row1">
-      <button class="icon-btn" id="homeBtn" title="홈">🏠</button>
       <button class="icon-btn" id="settingsBtn" title="설정">☰</button>
       <button id="locBtn"></button>
       <button type="button" class="trans-sel" id="mainTransBtn"></button>
@@ -284,6 +291,14 @@ select{font-family:inherit;}
   <div id="scriptureWrap">
     <div id="scripture">
       <div class="load-msg">불러오는 중…</div>
+    </div>
+
+    <button class="icon-btn" id="homeBtn" title="홈">🏠</button>
+
+    <!-- 폰트 크기 팝오버 -->
+    <div id="fontPop">
+      <button id="fontDown">가-</button>
+      <button id="fontUp">가+</button>
     </div>
 
     <!-- 범위/책/장/절 4단 피커 시트 (헤더 바로 아래, 본문 영역 안에서 슬라이드) -->
@@ -308,12 +323,6 @@ select{font-family:inherit;}
       </div>
     </div>
   </div>
-</div>
-
-<!-- 폰트 크기 팝오버 -->
-<div id="fontPop">
-  <button id="fontDown">가-</button>
-  <button id="fontUp">가+</button>
 </div>
 
 <!-- 번역본 선택 드롭다운 -->
@@ -1188,8 +1197,10 @@ function bindEvents(){
   });
   document.getElementById('pkRange').addEventListener('click', (e)=>{
     const rangeBtn = e.target.closest('[data-range]');
-    if(rangeBtn){ pk.filter = rangeBtn.dataset.range; renderPkRange(); renderPkBook(); return; }
     const jumpBtn = e.target.closest('[data-jump]');
+    if(!rangeBtn && !jumpBtn) return;
+    e.stopPropagation();
+    if(rangeBtn){ pk.filter = rangeBtn.dataset.range; renderPkRange(); renderPkBook(); return; }
     if(jumpBtn){
       const b = parseInt(jumpBtn.dataset.jump);
       const el = document.querySelector('#pkBook [data-book="'+b+'"]');
@@ -1199,18 +1210,21 @@ function bindEvents(){
   document.getElementById('pkBook').addEventListener('click', (e)=>{
     const cell = e.target.closest('[data-book]');
     if(!cell) return;
+    e.stopPropagation();
     pk.book = parseInt(cell.dataset.book); pk.chapter=1; pk.verse=1;
     renderPkBook(); renderPkChapter(); renderPkVerse(); updatePkConfirmText();
   });
   document.getElementById('pkChapter').addEventListener('click', (e)=>{
     const cell = e.target.closest('[data-chapter]');
     if(!cell) return;
+    e.stopPropagation();
     pk.chapter = parseInt(cell.dataset.chapter); pk.verse=1;
     renderPkChapter(); renderPkVerse(); updatePkConfirmText();
   });
   document.getElementById('pkVerse').addEventListener('click', (e)=>{
     const cell = e.target.closest('[data-verse]');
     if(!cell) return;
+    e.stopPropagation();
     pk.verse = parseInt(cell.dataset.verse);
     renderPkVerse(); updatePkConfirmText();
     confirmLocSelection();
