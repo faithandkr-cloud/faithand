@@ -1260,7 +1260,7 @@ function bindEvents(){
   document.getElementById('compareTransSel').onchange = (e)=>{ state.compareKey=e.target.value; saveState(); renderChapter(); };
   document.getElementById('hymnBtn').onclick = ()=>{
     // TODO: 찬송가 앱 파일이 준비되면 아래 경로를 실제 파일명으로 바꿔주세요.
-    window.open('./찬송가.html', '_blank');
+    location.href = './찬송가.html';
   };
 
   document.getElementById('settingsBtn').onclick = openSettingsSheet;
