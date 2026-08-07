@@ -365,9 +365,9 @@ select{font-family:inherit;}
 
     <div class="settings-card">
       <div class="settings-card-title">📖 성경 번역본 불러오기</div>
-      <div class="settings-card-desc">여러 번역본 JSON 파일을 한 번에 선택할 수 있습니다.</div>
+      <div class="settings-card-desc">JSON 파일 또는 마이스워드 성경 파일(.bbl.mybible)을 여러 개 한 번에 선택할 수 있습니다. mybible 파일은 마이스워드처럼 장을 열 때만 조회하므로 로딩이 거의 없습니다.</div>
       <label class="settings-file-label" for="fileBible">📂 파일 선택 (여러 개 가능)</label>
-      <input type="file" id="fileBible" accept=".json" multiple style="display:none">
+      <input type="file" id="fileBible" accept=".json,.mybible" multiple style="display:none">
       <div class="settings-list" id="bibleList"></div>
     </div>
 
@@ -381,9 +381,9 @@ select{font-family:inherit;}
 
     <div class="settings-card">
       <div class="settings-card-title">📔 사전 불러오기</div>
-      <div class="settings-card-desc">사전 JSON 파일을 최대 3개까지 등록할 수 있습니다.</div>
+      <div class="settings-card-desc">사전 JSON 파일 또는 마이스워드 사전 파일(.dct.mybible)을 최대 3개까지 등록할 수 있습니다.</div>
       <label class="settings-file-label" for="fileDict">📂 파일 선택 (여러 개 가능)</label>
-      <input type="file" id="fileDict" accept=".json" multiple style="display:none">
+      <input type="file" id="fileDict" accept=".json,.mybible" multiple style="display:none">
       <div class="settings-list" id="dictList"></div>
     </div>
 
@@ -465,8 +465,11 @@ let state = {
   mainKey: '개역개정', compareKey: '바른성경', compareOn:true,
   fontSize: 19, fontChoice: 'serif'
 };
-const TRANS_DATA = {}; // key -> {meta,bookNames,verses}
-let DICT_DATA = null;
+// TRANS_DATA[key] = {type:'json', data:{meta,bookNames,verses}}
+//                 또는 {type:'sqlite', db, chapterCounts:{book:{chapter:절수}}} (마이스워드 .bbl.mybible)
+const TRANS_DATA = {};
+const TRANS_CHAPTER_CACHE = {}; // "key_book_chapter" -> {verse:text} (sqlite 번역본 장별 쿼리 결과 메모이즈)
+let DICT_SOURCES = null; // [{type:'json',data}|{type:'sqlite',db}, ...] 에스라(대표) 사전이 앞쪽 우선순위
 let CMT_CHAPTER_RANGES = null; // 현재 렌더링 중인 장의 [fromverse,toverse] 목록 (hasCommentary 판정용)
 const CMT_CACHE = {}; // "book_chapter" -> array (sql.js 쿼리 결과 메모이즈)
 
@@ -548,7 +551,8 @@ const AppDB = (()=>{
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function bookName(bn){
   const md = TRANS_DATA[state.mainKey];
-  return md?.bookNames?.[String(bn)]?.name || BOOK_FALLBACK[bn] || ('책'+bn);
+  const names = md && md.type==='json' ? md.data?.bookNames : null;
+  return names?.[String(bn)]?.name || BOOK_FALLBACK[bn] || ('책'+bn);
 }
 /* ===================== 홈으로 이동 =====================
    대문.html의 iframe 안에서 열린 경우: 부모창에 메시지를 보내 홈으로 이동시킨다.
@@ -598,14 +602,37 @@ function loadState(){
   }catch(_){}
 }
 
-/* ===================== 데이터 로드 (IndexedDB 우선, 없으면 폴더 fetch 폴백) ===================== */
+/* ===================== 데이터 로드 (IndexedDB 우선, 없으면 폴더 fetch 폴백) =====================
+   마이스워드 성경 파일(.bbl.mybible)은 SQLite DB이며 Bible(Book,Chapter,Verse,Scripture) 테이블에
+   (Book,Chapter,Verse) 인덱스가 있다. 주석과 동일하게 원본 SQLite를 그대로 열어두고, 장을 펼칠 때만
+   해당 장 절들을 쿼리한다 — 전체 성경을 JSON으로 미리 읽어들이지 않으므로 등록/전환 시 로딩이 거의 없다.
+   (JSON 번역본은 기존 방식대로 전체를 한 번에 읽어 메모리에 둔다.)
+*/
 async function loadTranslation(key){
   if(TRANS_DATA[key]) return TRANS_DATA[key];
   // 1) 설정에서 불러온 IndexedDB 번역본 우선
   try{
     const rec = await AppDB.load('bible:'+key);
-    if(rec && rec.data){ TRANS_DATA[key]=rec.data; return rec.data; }
-  }catch(e){}
+    if(rec && rec.data){
+      if(rec.meta?.type === 'mybible'){
+        const SQL = await ensureSqlJs();
+        const db = new SQL.Database(new Uint8Array(rec.data));
+        const chapterCounts = {};
+        const stmt = db.prepare('SELECT Book, Chapter, MAX(Verse) AS mv FROM Bible GROUP BY Book, Chapter');
+        while(stmt.step()){
+          const row = stmt.getAsObject();
+          (chapterCounts[row.Book] || (chapterCounts[row.Book]={}))[row.Chapter] = row.mv;
+        }
+        stmt.free();
+        const handle = {type:'sqlite', db, chapterCounts};
+        TRANS_DATA[key] = handle;
+        return handle;
+      }
+      const handle = {type:'json', data:rec.data};
+      TRANS_DATA[key] = handle;
+      return handle;
+    }
+  }catch(e){ console.error('번역본 로드 실패:', key, e); }
   // 2) 없으면 기존 방식(같은 폴더의 ./bible/*.json, 서버 필요)으로 폴백
   const item = TRANSLATIONS.find(t=>t.key===key);
   if(!item) return null;
@@ -613,37 +640,86 @@ async function loadTranslation(key){
     const res = await fetch('./bible/'+encodeURIComponent(item.file));
     if(!res.ok) throw new Error('not found');
     const data = await res.json();
-    TRANS_DATA[key] = data;
-    return data;
+    const handle = {type:'json', data};
+    TRANS_DATA[key] = handle;
+    return handle;
   }catch(e){
     return null;
   }
+}
+// 번역본 핸들(json 또는 sqlite)에서 특정 장의 {절번호:본문} 을 가져온다.
+async function getChapterVerses(key, handle, book, chapter){
+  if(!handle) return null;
+  if(handle.type === 'json'){
+    return handle.data.verses?.[String(book)]?.[String(chapter)] || null;
+  }
+  // sqlite: 캐시에 없으면 그 장만 쿼리 (마이스워드와 동일한 방식 — 장 이동 시 로딩이 거의 없음)
+  const cacheKey = key+'_'+book+'_'+chapter;
+  if(TRANS_CHAPTER_CACHE[cacheKey]) return TRANS_CHAPTER_CACHE[cacheKey];
+  try{
+    const stmt = handle.db.prepare('SELECT Verse, Scripture FROM Bible WHERE Book=? AND Chapter=? ORDER BY Verse');
+    stmt.bind([book, chapter]);
+    const out = {};
+    while(stmt.step()){
+      const row = stmt.getAsObject();
+      out[String(row.Verse)] = row.Scripture;
+    }
+    stmt.free();
+    TRANS_CHAPTER_CACHE[cacheKey] = out;
+    return out;
+  }catch(e){ console.error('본문 조회 실패:', key, book, chapter, e); return null; }
 }
 async function listStoredBibleKeys(){
   const recs = await AppDB.listByPrefix('bible:');
   return recs.map(r=> r.key.slice('bible:'.length));
 }
+/* ===================== 사전: JSON은 기존처럼 메모리에, 마이스워드(.dct.mybible)는 SQLite 직접 쿼리 =====================
+   dictionary(word, data) 테이블에 word 인덱스가 있어 선택한 단어를 즉시 조회할 수 있다
+   (전체 사전을 미리 읽어들이지 않으므로 등록 시 로딩이 거의 없음).
+*/
 async function loadDict(){
-  if(DICT_DATA) return DICT_DATA;
-  DICT_DATA = {};
-  // 1) 설정에서 불러온 사전(최대 3개)을 모두 병합
-  //    (겹치는 단어는 '에스라' 사전이 우선하도록 마지막에 덮어씀)
+  if(DICT_SOURCES) return DICT_SOURCES;
+  const jsonEntries = {}; // 일반 JSON 사전들을 병합 (겹치는 단어는 나중 것이 덮어씀)
+  const sqliteSources = [];
+  let hasAny = false;
   try{
     const recs = await AppDB.listByPrefix('dict:');
     if(recs.length){
+      hasAny = true;
+      // '에스라' 이름이 들어간 사전이 최우선이 되도록 뒤로 미뤄 마지막에 덮어쓰거나(JSON), 앞쪽에 놓는다(sqlite)
       const ezraRecs = recs.filter(r=>r.key.includes('에스라'));
       const otherRecs = recs.filter(r=>!r.key.includes('에스라'));
-      otherRecs.forEach(r=>{ Object.assign(DICT_DATA, r.data||{}); });
-      ezraRecs.forEach(r=>{ Object.assign(DICT_DATA, r.data||{}); });
-      return DICT_DATA;
+      for(const r of otherRecs){
+        if(r.meta?.type === 'mybible'){
+          const SQL = await ensureSqlJs();
+          sqliteSources.push({type:'sqlite', db:new SQL.Database(new Uint8Array(r.data))});
+        } else {
+          Object.assign(jsonEntries, r.data||{});
+        }
+      }
+      const ezraSqlite = [];
+      for(const r of ezraRecs){
+        if(r.meta?.type === 'mybible'){
+          const SQL = await ensureSqlJs();
+          ezraSqlite.push({type:'sqlite', db:new SQL.Database(new Uint8Array(r.data))});
+        } else {
+          Object.assign(jsonEntries, r.data||{}); // JSON 에스라 사전은 마지막에 덮어써서 우선순위 확보
+        }
+      }
+      // 조회 우선순위: 에스라(sqlite) > 그 외(sqlite) > 병합된 JSON(에스라 포함)
+      DICT_SOURCES = [...ezraSqlite, ...sqliteSources, {type:'json', data:jsonEntries}];
+      return DICT_SOURCES;
     }
-  }catch(e){}
-  // 2) 없으면 기존 방식으로 폴백
-  try{
-    const res = await fetch(DICT_FILE);
-    DICT_DATA = await res.json();
-  }catch(e){ DICT_DATA = {}; }
-  return DICT_DATA;
+  }catch(e){ console.error('사전 로드 실패:', e); }
+  // 없으면 기존 방식(폴더 fetch)으로 폴백
+  if(!hasAny){
+    try{
+      const res = await fetch(DICT_FILE);
+      const data = await res.json();
+      DICT_SOURCES = [{type:'json', data}];
+    }catch(e){ DICT_SOURCES = [{type:'json', data:{}}]; }
+  }
+  return DICT_SOURCES;
 }
 /* ===================== 주석: SQLite(.mybible) 원본을 sql.js로 직접 쿼리 =====================
    호크마주석 등 마이스워드 주석 파일(.cmt.mybible)은 SQLite DB이며
@@ -699,19 +775,20 @@ async function renderChapter(){
   const scEl = document.getElementById('scripture');
   scEl.innerHTML = '<div class="load-msg">불러오는 중…</div>';
 
-  const mainData = await loadTranslation(state.mainKey);
-  if(!mainData){
+  const mainHandle = await loadTranslation(state.mainKey);
+  if(!mainHandle){
     scEl.innerHTML = '<div class="load-msg"><b>본문을 불러오지 못했습니다.</b><br>./bible/ 폴더에 해당 파일이 있는지 확인해주세요.<br>서버로 여신 경우 python3 -m http.server 로 접속 중인지도 확인해주세요.</div>';
     return;
   }
-  let compData = null;
+  let compHandle = null;
   let compareUnavailable = false;
   if(state.compareOn){
-    compData = await loadTranslation(state.compareKey);
-    if(!compData) compareUnavailable = true;
+    compHandle = await loadTranslation(state.compareKey);
+    if(!compHandle) compareUnavailable = true;
   }
 
-  const chData = mainData.verses?.[String(state.book)]?.[String(state.chapter)];
+  const chData = await getChapterVerses(state.mainKey, mainHandle, state.book, state.chapter);
+  const compChData = (state.compareOn && compHandle) ? await getChapterVerses(state.compareKey, compHandle, state.book, state.chapter) : null;
   await loadCmtIndex();
 
   if(!chData){
@@ -742,8 +819,7 @@ async function renderChapter(){
     const memoIcon = '<span class="vicon memo-icon'+(hasMemo?' has-memo':'')+'" data-memo-v="'+vn+'"><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>';
     const icons = '<span class="verse-icons">'+cmtIcon+memoIcon+'</span>';
     const rowClass = (hasMemo ? ' has-memo' : '') + (isHl ? ' vhighlight' : '');
-    if(state.compareOn && compData){
-      const compChData = compData.verses?.[String(state.book)]?.[String(state.chapter)];
+    if(state.compareOn && compChData){
       const compText = compChData?.[String(vn)] || '';
       html += '<div class="verse-pair'+rowClass+'" data-v="'+vn+'">'
         + '<div class="row"><span class="vnum" data-vnum="'+vn+'">'+vn+'</span><span class="vtext">'+esc(mainText)+icons+'</span></div>'
@@ -855,7 +931,11 @@ function updateLocBtn(){
 }
 function verseCountOf(book, chapter){
   const md = TRANS_DATA[state.mainKey];
-  const ch = md?.verses?.[String(book)]?.[String(chapter)];
+  if(!md) return 30;
+  if(md.type === 'sqlite'){
+    return md.chapterCounts?.[book]?.[chapter] || 30;
+  }
+  const ch = md.data?.verses?.[String(book)]?.[String(chapter)];
   return ch ? Object.keys(ch).length : 30;
 }
 function openLocSheet(){
@@ -974,13 +1054,29 @@ function closeCmtSheet(){
 }
 
 /* ===================== 사전 팝업 ===================== */
+function queryDictSqlite(db, word){
+  try{
+    const stmt = db.prepare('SELECT data FROM dictionary WHERE word=? LIMIT 1');
+    stmt.bind([word]);
+    let html = null;
+    if(stmt.step()) html = stmt.getAsObject().data;
+    stmt.free();
+    return html;
+  }catch(e){ return null; }
+}
 function findDictEntry(text){
-  if(!DICT_DATA) return null;
-  if(DICT_DATA[text]) return {word:text, html:DICT_DATA[text]};
-  // 조사가 붙은 경우 대비: 앞부분이 표제어와 일치하는 가장 긴 매칭 탐색
-  for(let len=text.length-1; len>=2; len--){
+  if(!DICT_SOURCES) return null;
+  // 조사가 붙은 경우 대비: 앞부분이 표제어와 일치하는 가장 긴 매칭 탐색 (등록 우선순위 순으로 조회)
+  for(let len=text.length; len>=2; len--){
     const cand = text.slice(0, len);
-    if(DICT_DATA[cand]) return {word:cand, html:DICT_DATA[cand]};
+    for(const src of DICT_SOURCES){
+      if(src.type==='json'){
+        if(src.data[cand]) return {word:cand, html:src.data[cand]};
+      } else {
+        const html = queryDictSqlite(src.db, cand);
+        if(html) return {word:cand, html};
+      }
+    }
   }
   return null;
 }
@@ -1084,7 +1180,8 @@ async function refreshSettingsLists(){
   const bibleEl = document.getElementById('bibleList');
   bibleEl.innerHTML = bibleRecs.length ? bibleRecs.map(r=>{
     const name = r.key.slice('bible:'.length);
-    return '<div class="settings-list-item"><span class="name">'+esc(name)+'</span><span class="remove" data-remove-bible="'+esc(r.key)+'">삭제</span></div>';
+    const tag = r.meta?.type==='mybible' ? ' <span style="color:var(--gold); font-weight:800;">mybible</span>' : '';
+    return '<div class="settings-list-item"><span class="name">'+esc(name)+tag+'</span><span class="remove" data-remove-bible="'+esc(r.key)+'">삭제</span></div>';
   }).join('') : '<div class="settings-empty">등록된 번역본이 없습니다</div>';
 
   // 주석 목록
@@ -1097,7 +1194,8 @@ async function refreshSettingsLists(){
   const dictEl = document.getElementById('dictList');
   dictEl.innerHTML = dictRecs.length ? dictRecs.map(r=>{
     const name = r.key.slice('dict:'.length);
-    return '<div class="settings-list-item"><span class="name">'+esc(name)+'</span><span class="remove" data-remove-dict="'+esc(r.key)+'">삭제</span></div>';
+    const tag = r.meta?.type==='mybible' ? ' <span style="color:var(--gold); font-weight:800;">mybible</span>' : '';
+    return '<div class="settings-list-item"><span class="name">'+esc(name)+tag+'</span><span class="remove" data-remove-dict="'+esc(r.key)+'">삭제</span></div>';
   }).join('') : '<div class="settings-empty">등록된 사전이 없습니다</div>';
 }
 function renderFontChoices(){
@@ -1114,14 +1212,24 @@ function renderCompareModeRow(){
   });
   document.getElementById('compareTransSel').style.display = state.compareOn ? '' : 'none';
 }
+function bibleKeyFromFileName(fileName){
+  return fileName.replace(/\.mybible$/i,'').replace(/\.json$/i,'').replace(/_bbl$/i,'');
+}
 async function handleBibleFiles(fileList){
   for(const file of Array.from(fileList)){
     try{
-      const text = await readFileAsText(file);
-      const data = JSON.parse(text);
-      const name = file.name.replace(/\.json$/i,'');
-      await AppDB.save('bible:'+name, data, {fileName:file.name});
+      const isMybible = /\.mybible$/i.test(file.name);
+      const name = bibleKeyFromFileName(file.name);
+      if(isMybible){
+        const buf = await file.arrayBuffer(); // .bbl.mybible(SQLite) 원본을 바이너리 그대로 저장, 파싱하지 않음
+        await AppDB.save('bible:'+name, buf, {fileName:file.name, type:'mybible'});
+      } else {
+        const text = await readFileAsText(file);
+        const data = JSON.parse(text);
+        await AppDB.save('bible:'+name, data, {fileName:file.name, type:'json'});
+      }
       delete TRANS_DATA[name]; // 캐시 초기화
+      Object.keys(TRANS_CHAPTER_CACHE).forEach(k=>{ if(k.indexOf(name+'_')===0) delete TRANS_CHAPTER_CACHE[k]; });
     }catch(err){
       console.error('번역본 등록 실패:', file.name, err);
       alert(file.name+' 불러오기 실패: '+err.message);
@@ -1157,20 +1265,26 @@ async function handleDictFiles(fileList){
   for(const file of files){
     if(count>=3){ alert('사전은 최대 3개까지 등록할 수 있습니다.'); break; }
     try{
-      const text = await readFileAsText(file);
-      const data = JSON.parse(text);
-      if(!data || typeof data!=='object' || Array.isArray(data)){
-        throw new Error('사전 파일 형식이 올바르지 않습니다 ({"단어":"설명", ...} 형태의 JSON 객체여야 합니다)');
+      const isMybible = /\.mybible$/i.test(file.name);
+      const name = file.name.replace(/\.mybible$/i,'').replace(/\.json$/i,'').replace(/_dct$/i,'');
+      if(isMybible){
+        const buf = await file.arrayBuffer(); // .dct.mybible(SQLite) 원본을 바이너리 그대로 저장, 파싱하지 않음
+        await AppDB.save('dict:'+name, buf, {fileName:file.name, type:'mybible'});
+      } else {
+        const text = await readFileAsText(file);
+        const data = JSON.parse(text);
+        if(!data || typeof data!=='object' || Array.isArray(data)){
+          throw new Error('사전 파일 형식이 올바르지 않습니다 ({"단어":"설명", ...} 형태의 JSON 객체여야 합니다)');
+        }
+        await AppDB.save('dict:'+name, data, {fileName:file.name, type:'json'});
       }
-      const name = file.name.replace(/\.json$/i,'');
-      await AppDB.save('dict:'+name, data, {fileName:file.name});
       count++;
     }catch(err){
       console.error('사전 등록 실패:', file.name, err);
       alert(file.name+' 불러오기 실패: '+err.message);
     }
   }
-  DICT_DATA = null; // 캐시 초기화
+  DICT_SOURCES = null; // 캐시 초기화
   await refreshSettingsLists();
 }
 function exportMemos(){
@@ -1292,7 +1406,11 @@ function bindEvents(){
     const btn = e.target.closest('[data-remove-bible]');
     if(!btn) return;
     await AppDB.remove(btn.dataset.removeBible);
-    delete TRANS_DATA[btn.dataset.removeBible.slice('bible:'.length)];
+    {
+      const removedKey = btn.dataset.removeBible.slice('bible:'.length);
+      delete TRANS_DATA[removedKey];
+      Object.keys(TRANS_CHAPTER_CACHE).forEach(k=>{ if(k.indexOf(removedKey+'_')===0) delete TRANS_CHAPTER_CACHE[k]; });
+    }
     await refreshSettingsLists(); await fillTransSelects();
   });
   document.getElementById('cmtList').addEventListener('click', async (e)=>{
@@ -1305,7 +1423,7 @@ function bindEvents(){
     const btn = e.target.closest('[data-remove-dict]');
     if(!btn) return;
     await AppDB.remove(btn.dataset.removeDict);
-    DICT_DATA = null;
+    DICT_SOURCES = null;
     await refreshSettingsLists();
   });
   document.getElementById('fontChoiceRow').addEventListener('click', (e)=>{
