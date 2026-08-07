@@ -28,7 +28,7 @@
 
   /* ── 상단 탭 ── */
   #tabbar{display:flex; background:#1B2A52; flex-shrink:0; position:relative; z-index:5;}
-  .tab{flex:1; text-align:center; padding:14px 4px 12px; color:rgba(255,255,255,.4); font-size:14.5px; font-weight:600;
+  .tab{flex:1; text-align:center; padding:21px 4px 19px; color:rgba(255,255,255,.4); font-size:14.5px; font-weight:600;
     cursor:pointer; position:relative; transition:color .15s;}
   .tab.active{color:#fff; font-weight:800;}
 
@@ -79,7 +79,7 @@
     display:none; align-items:center; gap:6px; position:relative;}
   #subheader.open{display:flex;}
   #searchToggleBtn.open{background:rgba(255,255,255,.12); border-radius:8px;}
-  #bibleLinkBtn{flex:0 0 auto; padding:14px 12px 12px; font-size:13.5px; font-weight:800; color:#F0C75E;
+  #bibleLinkBtn{flex:0 0 auto; padding:21px 12px 19px; font-size:13.5px; font-weight:800; color:#F0C75E;
     background:transparent; display:flex; align-items:center; justify-content:center; gap:3px;
     margin-right:12px;
     transition:color .12s ease, transform .12s ease;}
@@ -159,7 +159,7 @@
     <div class="tab" data-tab="worship" onclick="toggleWorshipMenu(event)">예배자료
       <div id="worshipMenu"></div>
     </div>
-    <div class="tab" id="bibleLinkBtn" onclick="location.href='./성경읽기_mobile.html'" title="성경 읽기">📖 성경</div>
+    <div class="tab" id="bibleLinkBtn" onclick="navigateApp('./성경읽기_mobile.html')" title="성경 읽기">📖 성경</div>
   </div>
 
   <div id="subheader">
@@ -239,6 +239,20 @@ function goHomeApp(){
     }
   }catch(_){}
   location.href = './대문.html';
+}
+/* ===================== 다른 앱으로 이동 =====================
+   대문.html의 iframe 안에서 이 페이지가 직접 location.href로 이동하면
+   대문의 히스토리 관리를 건너뛰고 전환도 매끄럽지 않아 이전 화면이
+   잠깐 보이는 "잔상" 현상이 생긴다. 그래서 대문에게 이동을 요청한다.
+*/
+function navigateApp(url){
+  try{
+    if(window.top !== window.self){
+      window.parent.postMessage({action:'openPage', url:url}, '*');
+      return;
+    }
+  }catch(_){}
+  location.href = url;
 }
 // 독립 탭(대문.html의 iframe이 아닌 경우)에서만 자체 히스토리를 쌓아
 // 기기의 물리적 뒤로가기를 누르면 홈으로 이동하게 한다.

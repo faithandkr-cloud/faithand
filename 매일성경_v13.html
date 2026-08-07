@@ -650,10 +650,10 @@ main { width: 100%; margin: 0; padding: 0; box-sizing: border-box; }
     </div>
   </div>
   <div class="tab-nav">
-    <button class="tab-btn active" id="tabBtnVerse"     onclick="switchTab('verse')">📖 성경본문</button>
-    <button class="tab-btn"        id="tabBtnComm"      onclick="switchTab('comm')">💡 오늘의 해설</button>
-    <button class="tab-btn"        id="tabBtnExeg"      onclick="switchTab('exeg')">🔎 본문해석</button>
-    <button class="tab-btn"        id="tabBtnMed"       onclick="switchTab('med')">✍️ 오늘 묵상</button>
+    <button class="tab-btn active" id="tabBtnVerse"     onclick="switchTab('verse')">📖 본문</button>
+    <button class="tab-btn"        id="tabBtnComm"      onclick="switchTab('comm')">💡 해설</button>
+    <button class="tab-btn"        id="tabBtnExeg"      onclick="switchTab('exeg')">🔎 해석</button>
+    <button class="tab-btn"        id="tabBtnMed"       onclick="switchTab('med')">✍️ 묵상</button>
     <button class="tab-btn"        id="tabBtnCal"       onclick="switchTab('cal')">🗓️ 달력</button>
   </div>
 </div>
@@ -1840,7 +1840,7 @@ function renderExegesisPanel() {
     <div class="ai-card">
       <div class="ai-hd">
         <div class="ai-hd-left">
-          <span class="ai-hd-title">🔎 본문해석 (신학생 수준)</span>
+          <span class="ai-hd-title">🔎 본문해석</span>
         </div>
         <button class="btn-refresh" onclick="refreshExegesis()">↺ 새로 생성</button>
       </div>
