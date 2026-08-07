@@ -20,6 +20,12 @@
   --txt-dim: #8a8070;
   --green:   #4a9b6f;
   --red:     #c0524a;
+  /* 성경 본문 카드 전용: 종이책 느낌의 밝은 배경 + 진한 잉크색 텍스트 */
+  --paper:    #f6efdb;
+  --paper-dk: #ecdfc0;
+  --ink:      #2b2013;
+  --ink-dim:  #6b5a3e;
+  --gold-ink: #86662a;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bot: env(safe-area-inset-bottom, 0px);
 }
@@ -154,7 +160,7 @@ main { width: 100%; margin: 0; padding: 0; box-sizing: border-box; }
 
 /* ── 성경본문 카드 ── */
 .verse-card {
-  background: linear-gradient(160deg, var(--navy), var(--navy-lt));
+  background: linear-gradient(160deg, var(--paper), var(--paper-dk));
   border-top: 1px solid rgba(154,123,53,.35);
   overflow: hidden;
 }
@@ -175,24 +181,24 @@ main { width: 100%; margin: 0; padding: 0; box-sizing: border-box; }
 .card-body { padding: 12px 8px 12px 4px; }
 .verse-book-title {
   font-size: .78rem;
-  color: var(--gold-lt);
+  color: var(--gold-ink);
   font-weight: 700;
   margin-bottom: 12px;
   padding-bottom: 8px;
-  border-bottom: 1px solid rgba(154,123,53,.2);
+  border-bottom: 1px solid rgba(154,123,53,.25);
   letter-spacing: .3px;
   line-height: 1.6;
 }
-.verse-address { color: var(--gold-lt); }
-.verse-subtitle { color: var(--cream); font-weight: 400; }
-.subtitle-loading { color: var(--txt-dim); font-size: .72rem; font-weight: 400; }
+.verse-address { color: var(--gold-ink); }
+.verse-subtitle { color: var(--ink); font-weight: 400; }
+.subtitle-loading { color: var(--ink-dim); font-size: .72rem; font-weight: 400; }
 .verse-text {
   font-size: .88rem; line-height: 2;
-  color: var(--cream);
+  color: var(--ink);
   white-space: pre-wrap; word-break: keep-all;
   text-align: left;
 }
-.verse-empty { font-size: .85rem; color: var(--txt-dim); text-align: center; padding: 12px 0; }
+.verse-empty { font-size: .85rem; color: var(--ink-dim); text-align: center; padding: 12px 0; }
 
 /* 핵심질문 */
 .key-questions {
@@ -586,9 +592,9 @@ main { width: 100%; margin: 0; padding: 0; box-sizing: border-box; }
 }
 
 /* ── 절번호 정렬 ── */
-.verse-text { font-size: 15px; line-height: 1.75; color: var(--cream); }
+.verse-text { font-size: 15px; line-height: 1.75; color: var(--ink); }
 .vline { display: flex; gap: 8px; margin-bottom: 4px; align-items: flex-start; }
-.vnum  { min-width: 22px; font-size: .8em; color: var(--gold-lt);
+.vnum  { min-width: 22px; font-size: .8em; color: var(--gold-ink);
          font-weight: 700; padding-top: 2px; flex-shrink: 0; text-align: right; }
 .vtxt  { flex: 1; }
 
@@ -596,7 +602,7 @@ main { width: 100%; margin: 0; padding: 0; box-sizing: border-box; }
 .verse-pure-title {
   font-size: 1.25rem;
   font-weight: 800;
-  color: var(--gold-ltr);
+  color: var(--gold-ink);
   margin-bottom: 10px;
   line-height: 1.4;
   padding-left: 30px; /* vnum(22px) + gap(8px) 과 맞춤 */

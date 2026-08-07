@@ -12,6 +12,9 @@
   --gold:#9a7b35; --gold-lt:#c9a84c; --gold-ltr:#e8c96a;
   --cream:#f0ead8; --txt:#d8cdb0; --txt-dim:#8a8070;
   --green:#4a9b6f; --green-lt:#7bd1a3;
+  /* 성경 본문 뷰어 전용: 종이책 느낌의 밝은 배경 + 진한 잉크색 텍스트 */
+  --paper:#f6efdb; --paper-dk:#ecdfc0;
+  --ink:#2b2013; --ink-dim:#6b5a3e; --gold-ink:#86662a;
   --verse-fs:15px;
   --safe-top:env(safe-area-inset-top,0px);
   --safe-bot:env(safe-area-inset-bottom,0px);
@@ -238,24 +241,24 @@ header {
 
 /* 본문 뷰어 — 여백 제거, 꽉채움 */
 #verse-viewer{
-  background:linear-gradient(160deg,var(--navy),var(--navy-lt));
+  background:linear-gradient(160deg,var(--paper),var(--paper-dk));
   border:none;border-radius:0;
   padding:8px 10px 24px;margin-bottom:0;
 }
 .vv-header{
   display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;
 }
-.vv-title{font-size:.88rem;font-weight:800;color:var(--gold-lt);}
+.vv-title{font-size:.88rem;font-weight:800;color:var(--gold-ink);}
 .vv-ver-btns{display:flex;gap:4px;}
 .ver-btn{
   padding:4px 8px;border-radius:8px;font-size:.65rem;font-weight:700;
-  border:1px solid rgba(154,123,53,.3);background:transparent;
-  color:var(--txt-dim);cursor:pointer;font-family:inherit;transition:all .15s;
+  border:1px solid rgba(154,123,53,.35);background:transparent;
+  color:var(--ink-dim);cursor:pointer;font-family:inherit;transition:all .15s;
 }
-.ver-btn.active{background:rgba(154,123,53,.3);color:var(--gold-ltr);border-color:var(--gold);}
+.ver-btn.active{background:rgba(154,123,53,.25);color:var(--gold-ink);border-color:var(--gold);}
 
 #verse-loading{
-  text-align:center;padding:30px;color:var(--txt-dim);font-size:.82rem;
+  text-align:center;padding:30px;color:var(--ink-dim);font-size:.82rem;
 }
 #verse-content{line-height:0;}
 
@@ -266,34 +269,33 @@ header {
 .ch-title{
   display:flex;align-items:center;gap:6px;
   font-size:.88rem;font-weight:900;
-  color:var(--gold-ltr);
+  color:var(--gold-ink);
   padding:14px 0 5px;
   margin-top:6px;
   border-top:1px solid rgba(154,123,53,.25);
   letter-spacing:.3px;
-  text-shadow:0 0 10px rgba(232,201,106,.25);
   line-height:1;
 }
 .ch-title:first-child{ border-top:none; margin-top:0; }
 .verse-row{
   display:flex;gap:5px;padding:2px 0;
-  border-bottom:1px solid rgba(255,255,255,.03);
+  border-bottom:1px solid rgba(43,32,19,.06);
   scroll-margin-top:8px;
 }
 .ch-title.tts-active{
-  background:rgba(154,123,53,.25);
+  background:rgba(154,123,53,.18);
   border-left:3px solid var(--gold-lt);
-  color:var(--gold-ltr);
+  color:var(--gold-ink);
 }
 .verse-row.tts-active{
-  background:rgba(201,168,76,.1);
+  background:rgba(201,168,76,.18);
   border-radius:6px;
   border-bottom-color:transparent;
 }
-.verse-row.tts-active .v-text{color:var(--cream);}
+.verse-row.tts-active .v-text{color:var(--ink);}
 /* 절 번호 */
 .v-num{
-  font-size:.75rem;color:var(--gold-ltr);font-weight:800;
+  font-size:.75rem;color:var(--gold-ink);font-weight:800;
   min-width:22px;padding-top:2px;flex-shrink:0;
   text-align:right;
   margin-left:3px;
@@ -303,7 +305,7 @@ header {
   font-size:.75rem !important;
   position:static !important;
 }
-.v-text{font-size:var(--verse-fs, .88rem);color:var(--cream);line-height:1.8;word-break:keep-all;}
+.v-text{font-size:var(--verse-fs, .88rem);color:var(--ink);line-height:1.8;word-break:keep-all;}
 
 .nav-btn{
   background:linear-gradient(160deg,var(--navy),var(--navy-lt));
@@ -968,7 +970,7 @@ async function loadVerses() {
   }
 
   document.getElementById('verse-loading').style.display = 'none';
-  document.getElementById('verse-content').innerHTML = html || '<div style="color:var(--txt-dim);padding:16px;">본문을 표시할 수 없습니다.</div>';
+  document.getElementById('verse-content').innerHTML = html || '<div style="color:var(--ink-dim);padding:16px;">본문을 표시할 수 없습니다.</div>';
   _patchTts();
 }
 
@@ -992,7 +994,7 @@ function parseRange(rangeStr) {
 function showVerseError(msg) {
   document.getElementById('verse-loading').style.display = 'none';
   document.getElementById('verse-content').innerHTML =
-    `<div style="color:var(--txt-dim);padding:16px;font-size:.82rem;line-height:1.7;white-space:pre-wrap;">${msg}</div>`;
+    `<div style="color:var(--ink-dim);padding:16px;font-size:.82rem;line-height:1.7;white-space:pre-wrap;">${msg}</div>`;
 }
 
 /* ── 캘린더 ── */
