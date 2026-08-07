@@ -631,17 +631,17 @@ async function loadTranslation(key){
         try{
           const SQL = await ensureSqlJs();
           const db = new SQL.Database(new Uint8Array(rec.data));
-          const chapterCounts = {};
-          const stmt = db.prepare('SELECT Book, Chapter, MAX(Verse) AS mv FROM Bible GROUP BY Book, Chapter');
-          while(stmt.step()){
-            const row = stmt.getAsObject();
-            (chapterCounts[row.Book] || (chapterCounts[row.Book]={}))[row.Chapter] = row.mv;
-          }
-          stmt.free();
-          if(Object.keys(chapterCounts).length === 0){
+          // 장별 절수(chapterCounts)는 위치 피커(책/장/절 선택)를 열 때만 필요하다.
+          // 전체 성경을 GROUP BY로 훑는 무거운 작업이므로, 열 때마다 미리 계산해두지
+          // 않고 실제로 필요한 시점에 ensureChapterCounts()에서 한 번만 계산해 캐시한다.
+          // 대신 파일이 올바른 구조인지는 가벼운 존재 확인으로만 검증한다.
+          const checkStmt = db.prepare('SELECT 1 FROM Bible LIMIT 1');
+          const hasData = checkStmt.step();
+          checkStmt.free();
+          if(!hasData){
             throw new Error("Bible 테이블에서 데이터를 찾지 못했습니다 (테이블/컬럼 구조가 다른 mybible 파일일 수 있음)");
           }
-          const handle = {type:'sqlite', db, chapterCounts};
+          const handle = {type:'sqlite', db, chapterCounts:null};
           TRANS_DATA[key] = handle;
           return handle;
         }catch(sqlErr){
@@ -699,6 +699,22 @@ async function getChapterVerses(key, handle, book, chapter){
     TRANS_CHAPTER_CACHE[cacheKey] = out;
     return out;
   }catch(e){ console.error('본문 조회 실패:', key, book, chapter, e); return null; }
+}
+// sqlite 핸들의 장별 절수(chapterCounts)를 처음 필요할 때 한 번만 계산해서 캐시한다.
+// (위치 피커를 열 때 등, 실제로 필요한 시점에만 전체 테이블을 훑는다)
+function ensureChapterCounts(handle){
+  if(handle.chapterCounts) return handle.chapterCounts;
+  const counts = {};
+  try{
+    const stmt = handle.db.prepare('SELECT Book, Chapter, MAX(Verse) AS mv FROM Bible GROUP BY Book, Chapter');
+    while(stmt.step()){
+      const row = stmt.getAsObject();
+      (counts[row.Book] || (counts[row.Book]={}))[row.Chapter] = row.mv;
+    }
+    stmt.free();
+  }catch(e){ console.error('장별 절수 계산 실패:', e); }
+  handle.chapterCounts = counts;
+  return counts;
 }
 async function listStoredBibleKeys(){
   const recs = await AppDB.listByPrefix('bible:');
@@ -965,7 +981,8 @@ function verseCountOf(book, chapter){
   const md = TRANS_DATA[state.mainKey];
   if(!md) return 30;
   if(md.type === 'sqlite'){
-    return md.chapterCounts?.[book]?.[chapter] || 30;
+    const counts = ensureChapterCounts(md);
+    return counts?.[book]?.[chapter] || 30;
   }
   const ch = md.data?.verses?.[String(book)]?.[String(chapter)];
   return ch ? Object.keys(ch).length : 30;
