@@ -608,8 +608,10 @@ function loadState(){
    해당 장 절들을 쿼리한다 — 전체 성경을 JSON으로 미리 읽어들이지 않으므로 등록/전환 시 로딩이 거의 없다.
    (JSON 번역본은 기존 방식대로 전체를 한 번에 읽어 메모리에 둔다.)
 */
+let LAST_BIBLE_LOAD_ERROR = null; // 화면에 원인을 바로 보여주기 위한 최근 오류 메시지 (휴대폰에서 콘솔을 보기 어려우므로)
 async function loadTranslation(key){
   if(TRANS_DATA[key]) return TRANS_DATA[key];
+  LAST_BIBLE_LOAD_ERROR = null;
   // 1) 설정에서 불러온 IndexedDB 번역본 우선
   try{
     let rec = await AppDB.load('bible:'+key);
@@ -626,27 +628,44 @@ async function loadTranslation(key){
     }
     if(rec && rec.data){
       if(rec.meta?.type === 'mybible'){
-        const SQL = await ensureSqlJs();
-        const db = new SQL.Database(new Uint8Array(rec.data));
-        const chapterCounts = {};
-        const stmt = db.prepare('SELECT Book, Chapter, MAX(Verse) AS mv FROM Bible GROUP BY Book, Chapter');
-        while(stmt.step()){
-          const row = stmt.getAsObject();
-          (chapterCounts[row.Book] || (chapterCounts[row.Book]={}))[row.Chapter] = row.mv;
+        try{
+          const SQL = await ensureSqlJs();
+          const db = new SQL.Database(new Uint8Array(rec.data));
+          const chapterCounts = {};
+          const stmt = db.prepare('SELECT Book, Chapter, MAX(Verse) AS mv FROM Bible GROUP BY Book, Chapter');
+          while(stmt.step()){
+            const row = stmt.getAsObject();
+            (chapterCounts[row.Book] || (chapterCounts[row.Book]={}))[row.Chapter] = row.mv;
+          }
+          stmt.free();
+          if(Object.keys(chapterCounts).length === 0){
+            throw new Error("Bible 테이블에서 데이터를 찾지 못했습니다 (테이블/컬럼 구조가 다른 mybible 파일일 수 있음)");
+          }
+          const handle = {type:'sqlite', db, chapterCounts};
+          TRANS_DATA[key] = handle;
+          return handle;
+        }catch(sqlErr){
+          // mybible로 등록됐지만 sqlite로 여는 데 실패한 경우: 여기서 바로 원인을 기록하고 멈춘다
+          // (아래 서버 fetch 폴백으로 넘어가도 어차피 실패하므로, 여기서 실제 원인을 남겨야 진단 가능)
+          LAST_BIBLE_LOAD_ERROR = '['+key+'] mybible 파일 열기 실패: ' + (sqlErr?.message || sqlErr);
+          console.error('번역본(mybible) 로드 실패:', key, sqlErr);
+          return null;
         }
-        stmt.free();
-        const handle = {type:'sqlite', db, chapterCounts};
-        TRANS_DATA[key] = handle;
-        return handle;
       }
       const handle = {type:'json', data:rec.data};
       TRANS_DATA[key] = handle;
       return handle;
     }
-  }catch(e){ console.error('번역본 로드 실패:', key, e); }
+  }catch(e){
+    LAST_BIBLE_LOAD_ERROR = '['+key+'] IndexedDB 조회 실패: ' + (e?.message || e);
+    console.error('번역본 로드 실패:', key, e);
+  }
   // 2) 없으면 기존 방식(같은 폴더의 ./bible/*.json, 서버 필요)으로 폴백
   const item = TRANSLATIONS.find(t=>t.key===key);
-  if(!item) return null;
+  if(!item){
+    if(!LAST_BIBLE_LOAD_ERROR) LAST_BIBLE_LOAD_ERROR = '['+key+'] 등록된 번역본을 찾지 못했습니다. 설정에서 다시 등록해주세요.';
+    return null;
+  }
   try{
     const res = await fetch('./bible/'+encodeURIComponent(item.file));
     if(!res.ok) throw new Error('not found');
@@ -655,6 +674,7 @@ async function loadTranslation(key){
     TRANS_DATA[key] = handle;
     return handle;
   }catch(e){
+    if(!LAST_BIBLE_LOAD_ERROR) LAST_BIBLE_LOAD_ERROR = '['+key+'] 등록된 번역본이 없고, 서버(./bible/) 폴백도 실패했습니다.';
     return null;
   }
 }
@@ -788,7 +808,8 @@ async function renderChapter(){
 
   const mainHandle = await loadTranslation(state.mainKey);
   if(!mainHandle){
-    scEl.innerHTML = '<div class="load-msg"><b>본문을 불러오지 못했습니다.</b><br>./bible/ 폴더에 해당 파일이 있는지 확인해주세요.<br>서버로 여신 경우 python3 -m http.server 로 접속 중인지도 확인해주세요.</div>';
+    const detail = LAST_BIBLE_LOAD_ERROR ? ('<br><span style="font-size:12.5px; color:#8a5a00;">'+esc(LAST_BIBLE_LOAD_ERROR)+'</span>') : '';
+    scEl.innerHTML = '<div class="load-msg"><b>본문을 불러오지 못했습니다.</b>'+detail+'<br>설정 ⚙ → 성경 번역본 불러오기에서 다시 등록해보시거나, 위 원인 메시지를 개발자에게 알려주세요.</div>';
     return;
   }
   let compHandle = null;
