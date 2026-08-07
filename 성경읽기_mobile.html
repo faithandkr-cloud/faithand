@@ -468,6 +468,7 @@ let state = {
 const TRANS_DATA = {}; // key -> {meta,bookNames,verses}
 let DICT_DATA = null;
 let CMT_INDEX = null;
+let CMT_MAIN_DATA = null; // 'commentary:main' 레코드 전체(index+data)를 메모리에 한 번만 보관
 const CMT_CACHE = {}; // "book_chapter" -> array
 
 const FONT_OPTIONS = [
@@ -645,16 +646,21 @@ async function loadDict(){
   }catch(e){ DICT_DATA = {}; }
   return DICT_DATA;
 }
+async function loadCmtMain(){
+  // 87MB에 달하는 주석 합본을 매번 IndexedDB에서 다시 읽으면 장을 넘길
+  // 때마다 느려지므로, 한 번 읽은 뒤에는 메모리(CMT_MAIN_DATA)에 두고 재사용한다.
+  if(CMT_MAIN_DATA) return CMT_MAIN_DATA;
+  try{
+    const rec = await AppDB.load('commentary:main');
+    if(rec && rec.data){ CMT_MAIN_DATA = rec.data; return CMT_MAIN_DATA; }
+  }catch(e){}
+  return null;
+}
 async function loadCmtIndex(){
   if(CMT_INDEX) return CMT_INDEX;
   // 1) 설정에서 불러온 합본 주석 우선
-  try{
-    const rec = await AppDB.load('commentary:main');
-    if(rec && rec.data && rec.data.index){
-      CMT_INDEX = rec.data.index;
-      return CMT_INDEX;
-    }
-  }catch(e){}
+  const main = await loadCmtMain();
+  if(main && main.index){ CMT_INDEX = main.index; return CMT_INDEX; }
   // 2) 없으면 기존 방식(폴더 구조)으로 폴백
   try{
     const res = await fetch(CMT_BASE+'index.json');
@@ -670,15 +676,13 @@ function hasCommentary(book, chapter, verse){
 async function loadCmtChapter(book, chapter){
   const k = book+'_'+chapter;
   if(CMT_CACHE[k]) return CMT_CACHE[k];
-  // 1) 설정에서 불러온 합본 주석 우선
-  try{
-    const rec = await AppDB.load('commentary:main');
-    if(rec && rec.data && rec.data.data){
-      const data = rec.data.data[k] || [];
-      CMT_CACHE[k] = data;
-      return data;
-    }
-  }catch(e){}
+  // 1) 설정에서 불러온 합본 주석 우선 (메모리 캐시 재사용, IndexedDB 재조회 없음)
+  const main = await loadCmtMain();
+  if(main && main.data){
+    const data = main.data[k] || [];
+    CMT_CACHE[k] = data;
+    return data;
+  }
   // 2) 없으면 기존 방식(폴더 구조)으로 폴백
   try{
     const res = await fetch(CMT_BASE+book+'/'+chapter+'.json');
@@ -1130,7 +1134,7 @@ async function handleCmtFile(file){
     const data = JSON.parse(text);
     if(!data.index || !data.data) throw new Error('주석 파일 형식이 올바르지 않습니다 (index/data 필요)');
     await AppDB.save('commentary:main', data, {fileName:file.name});
-    CMT_INDEX = null; // 캐시 초기화
+    CMT_INDEX = null; CMT_MAIN_DATA = null; // 캐시 초기화
     Object.keys(CMT_CACHE).forEach(k=> delete CMT_CACHE[k]);
   }catch(err){
     console.error('주석 등록 실패:', file.name, err);
@@ -1294,7 +1298,7 @@ function bindEvents(){
   document.getElementById('cmtList').addEventListener('click', async (e)=>{
     if(!e.target.closest('[data-remove-cmt]')) return;
     await AppDB.remove('commentary:main');
-    CMT_INDEX = null; Object.keys(CMT_CACHE).forEach(k=> delete CMT_CACHE[k]);
+    CMT_INDEX = null; CMT_MAIN_DATA = null; Object.keys(CMT_CACHE).forEach(k=> delete CMT_CACHE[k]);
     await refreshSettingsLists();
   });
   document.getElementById('dictList').addEventListener('click', async (e)=>{
