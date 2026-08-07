@@ -55,14 +55,15 @@
   /* 찬송가 찾기 드롭다운 */
   #hymnFinder{display:none; position:absolute; inset:0; background:rgba(20,24,28,.28); z-index:100;}
   #hymnFinder.open{display:block;}
-  #hymnFinderPanel{position:absolute; right:10px; width:66%; min-width:220px; top:0;
-    max-height:min(600px,85vh); background:var(--white);
+  #hymnFinderPanel{position:absolute; right:10px; width:66%; min-width:220px; top:10px;
+    bottom:calc(14px + env(safe-area-inset-bottom, 0px)); background:var(--white);
     border-radius:14px; display:flex; flex-direction:column; box-shadow:0 12px 28px rgba(0,0,0,.25); overflow:hidden;}
   #hymnFinderHead{flex-shrink:0; padding:10px 12px; border-bottom:1px solid var(--line); display:flex; gap:8px; align-items:center;}
-  #hymnFinderSearch{flex:1; padding:10px 12px; border:1.5px solid var(--line); border-radius:9px; font-size:15px; font-family:inherit;}
+  #hymnFinderSearch{flex:1; min-width:0; padding:10px 12px; border:1.5px solid var(--line); border-radius:9px; font-size:15px;
+    font-family:inherit; -webkit-appearance:none; appearance:none; background:var(--white);}
   #hymnFinderClose{flex-shrink:0; width:36px; height:36px; border-radius:9px; border:none; background:var(--parchment-deep);
     color:var(--ink); font-size:16px;}
-  #hymnFinderList{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:6px 0 20px;}
+  #hymnFinderList{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:6px 0 20px; letter-spacing:-0.4px;}
   .hf-major{padding:13px 16px; font-weight:800; color:var(--gold); font-size:15px; background:var(--parchment);
     display:flex; justify-content:space-between; align-items:center;}
   .hf-minor{padding:10px 16px 10px 24px; font-weight:700; color:var(--ink); font-size:14px; background:var(--parchment-deep);
