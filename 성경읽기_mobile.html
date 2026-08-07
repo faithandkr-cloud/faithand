@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>성경읽기</title>
@@ -372,9 +373,9 @@ select{font-family:inherit;}
 
     <div class="settings-card">
       <div class="settings-card-title">📝 주석 불러오기</div>
-      <div class="settings-card-desc">합쳐진 주석 JSON 파일 1개를 선택하세요.</div>
+      <div class="settings-card-desc">마이스워드 주석 파일(.mybible) 1개를 선택하세요. 예: HokmahKor.cmt.mybible</div>
       <label class="settings-file-label" for="fileCmt">📂 파일 선택 (1개)</label>
-      <input type="file" id="fileCmt" accept=".json" style="display:none">
+      <input type="file" id="fileCmt" accept=".mybible" style="display:none">
       <div class="settings-list" id="cmtList"></div>
     </div>
 
@@ -453,7 +454,6 @@ const TRANSLATIONS = [
   {key:'일본 문어역', file:'일본 문어역.json'}
 ];
 const DICT_FILE = './dictionaries/03_에스라사전.json';
-const CMT_BASE = './commentaries/hokma/';
 
 // 66권 book number -> 한글 이름 (선택 시트 표시는 개역개정 bookNames를 우선 사용, 로드 전 fallback)
 const BOOK_FALLBACK = {1:'창세기',2:'출애굽기',3:'레위기',4:'민수기',5:'신명기',6:'여호수아',7:'사사기',8:'룻기',9:'사무엘상',10:'사무엘하',11:'열왕기상',12:'열왕기하',13:'역대상',14:'역대하',15:'에스라',16:'느헤미야',17:'에스더',18:'욥기',19:'시편',20:'잠언',21:'전도서',22:'아가',23:'이사야',24:'예레미야',25:'예레미야애가',26:'에스겔',27:'다니엘',28:'호세아',29:'요엘',30:'아모스',31:'오바댜',32:'요나',33:'미가',34:'나훔',35:'하박국',36:'스바냐',37:'학개',38:'스가랴',39:'말라기',40:'마태복음',41:'마가복음',42:'누가복음',43:'요한복음',44:'사도행전',45:'로마서',46:'고린도전서',47:'고린도후서',48:'갈라디아서',49:'에베소서',50:'빌립보서',51:'골로새서',52:'데살로니가전서',53:'데살로니가후서',54:'디모데전서',55:'디모데후서',56:'디도서',57:'빌레몬서',58:'히브리서',59:'야고보서',60:'베드로전서',61:'베드로후서',62:'요한1서',63:'요한2서',64:'요한3서',65:'유다서',66:'요한계시록'};
@@ -467,9 +467,8 @@ let state = {
 };
 const TRANS_DATA = {}; // key -> {meta,bookNames,verses}
 let DICT_DATA = null;
-let CMT_INDEX = null;
-let CMT_MAIN_DATA = null; // 'commentary:main' 레코드 전체(index+data)를 메모리에 한 번만 보관
-const CMT_CACHE = {}; // "book_chapter" -> array
+let CMT_CHAPTER_RANGES = null; // 현재 렌더링 중인 장의 [fromverse,toverse] 목록 (hasCommentary 판정용)
+const CMT_CACHE = {}; // "book_chapter" -> array (sql.js 쿼리 결과 메모이즈)
 
 const FONT_OPTIONS = [
   {id:'serif', label:'명조체', family:"'Noto Serif KR', serif"},
@@ -479,7 +478,7 @@ const FONT_OPTIONS = [
 
 /* ===================== IndexedDB 저장소 (AppDB) =====================
    번역본/주석/사전을 서버 없이 "파일 선택 → 브라우저에 저장" 방식으로 쓰기 위한 공용 저장소.
-   키 형식: 'bible:개역개정', 'commentary:main', 'dict:03_에스라사전' 등
+   키 형식: 'bible:개역개정', 'commentary:mybible', 'dict:03_에스라사전' 등
 */
 const AppDB = (()=>{
   const DB_NAME = 'BibleAppStore';
@@ -646,50 +645,53 @@ async function loadDict(){
   }catch(e){ DICT_DATA = {}; }
   return DICT_DATA;
 }
-async function loadCmtMain(){
-  // 87MB에 달하는 주석 합본을 매번 IndexedDB에서 다시 읽으면 장을 넘길
-  // 때마다 느려지므로, 한 번 읽은 뒤에는 메모리(CMT_MAIN_DATA)에 두고 재사용한다.
-  if(CMT_MAIN_DATA) return CMT_MAIN_DATA;
-  try{
-    const rec = await AppDB.load('commentary:main');
-    if(rec && rec.data){ CMT_MAIN_DATA = rec.data; return CMT_MAIN_DATA; }
-  }catch(e){}
-  return null;
+/* ===================== 주석: SQLite(.mybible) 원본을 sql.js로 직접 쿼리 =====================
+   호크마주석 등 마이스워드 주석 파일(.cmt.mybible)은 SQLite DB이며
+   commentary(book, chapter, fromverse, toverse, data) 테이블에 (book,chapter,fromverse) 인덱스가 있다.
+   87MB를 JSON으로 통째 변환하지 않고, 원본 SQLite를 그대로 열어 필요한 장만 쿼리한다
+   (마이스워드와 동일한 방식 — 장 이동 시 로딩이 거의 없음).
+*/
+let SQLJS = null;      // sql.js 모듈(initSqlJs 결과), 세션당 한 번만 초기화
+let CMT_DB = null;     // sql.js Database 인스턴스 (IndexedDB의 바이너리를 열어서 메모리에 상주)
+async function ensureSqlJs(){
+  if(SQLJS) return SQLJS;
+  SQLJS = await initSqlJs({ locateFile: f => 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/'+f });
+  return SQLJS;
 }
-async function loadCmtIndex(){
-  if(CMT_INDEX) return CMT_INDEX;
-  // 1) 설정에서 불러온 합본 주석 우선
-  const main = await loadCmtMain();
-  if(main && main.index){ CMT_INDEX = main.index; return CMT_INDEX; }
-  // 2) 없으면 기존 방식(폴더 구조)으로 폴백
+async function loadCmtDB(){
+  if(CMT_DB) return CMT_DB;
   try{
-    const res = await fetch(CMT_BASE+'index.json');
-    CMT_INDEX = await res.json();
-  }catch(e){ CMT_INDEX = {}; }
-  return CMT_INDEX;
-}
-function hasCommentary(book, chapter, verse){
-  const ranges = CMT_INDEX?.[String(book)]?.[String(chapter)];
-  if(!ranges) return false;
-  return ranges.some(([a,b])=> verse>=a && verse<=b);
+    const rec = await AppDB.load('commentary:mybible');
+    if(!rec || !rec.data) return null;
+    const SQL = await ensureSqlJs();
+    CMT_DB = new SQL.Database(new Uint8Array(rec.data));
+    return CMT_DB;
+  }catch(e){ console.error('주석 DB 열기 실패:', e); return null; }
 }
 async function loadCmtChapter(book, chapter){
   const k = book+'_'+chapter;
   if(CMT_CACHE[k]) return CMT_CACHE[k];
-  // 1) 설정에서 불러온 합본 주석 우선 (메모리 캐시 재사용, IndexedDB 재조회 없음)
-  const main = await loadCmtMain();
-  if(main && main.data){
-    const data = main.data[k] || [];
-    CMT_CACHE[k] = data;
-    return data;
-  }
-  // 2) 없으면 기존 방식(폴더 구조)으로 폴백
+  const db = await loadCmtDB();
+  if(!db){ CMT_CACHE[k] = []; return []; }
   try{
-    const res = await fetch(CMT_BASE+book+'/'+chapter+'.json');
-    const data = await res.json();
-    CMT_CACHE[k] = data;
-    return data;
-  }catch(e){ return []; }
+    const stmt = db.prepare('SELECT fromverse, toverse, data FROM commentary WHERE book=? AND chapter=? ORDER BY fromverse');
+    stmt.bind([book, chapter]);
+    const rows = [];
+    while(stmt.step()) rows.push(stmt.getAsObject());
+    stmt.free();
+    CMT_CACHE[k] = rows;
+    return rows;
+  }catch(e){ console.error('주석 조회 실패:', e); return []; }
+}
+async function loadCmtIndex(){
+  // 전체 성경 인덱스를 미리 만들 필요 없이, 지금 렌더링할 장의 절 범위만 구하면 된다.
+  const rows = await loadCmtChapter(state.book, state.chapter);
+  CMT_CHAPTER_RANGES = rows.map(r=>[r.fromverse, r.toverse]);
+  return CMT_CHAPTER_RANGES;
+}
+function hasCommentary(book, chapter, verse){
+  if(!CMT_CHAPTER_RANGES) return false;
+  return CMT_CHAPTER_RANGES.some(([a,b])=> verse>=a && verse<=b);
 }
 
 /* ===================== 렌더링 ===================== */
@@ -1086,7 +1088,7 @@ async function refreshSettingsLists(){
   }).join('') : '<div class="settings-empty">등록된 번역본이 없습니다</div>';
 
   // 주석 목록
-  const cmtRec = await AppDB.load('commentary:main');
+  const cmtRec = await AppDB.load('commentary:mybible');
   const cmtEl = document.getElementById('cmtList');
   cmtEl.innerHTML = cmtRec ? '<div class="settings-list-item"><span class="name">'+esc(cmtRec.meta?.fileName||'주석 파일')+'</span><span class="remove" data-remove-cmt="1">삭제</span></div>' : '<div class="settings-empty">등록된 주석이 없습니다</div>';
 
@@ -1130,11 +1132,9 @@ async function handleBibleFiles(fileList){
 }
 async function handleCmtFile(file){
   try{
-    const text = await readFileAsText(file);
-    const data = JSON.parse(text);
-    if(!data.index || !data.data) throw new Error('주석 파일 형식이 올바르지 않습니다 (index/data 필요)');
-    await AppDB.save('commentary:main', data, {fileName:file.name});
-    CMT_INDEX = null; CMT_MAIN_DATA = null; // 캐시 초기화
+    const buf = await file.arrayBuffer(); // .mybible(SQLite) 원본을 바이너리 그대로
+    await AppDB.save('commentary:mybible', buf, {fileName:file.name});
+    CMT_DB = null; CMT_CHAPTER_RANGES = null; // 캐시 초기화
     Object.keys(CMT_CACHE).forEach(k=> delete CMT_CACHE[k]);
   }catch(err){
     console.error('주석 등록 실패:', file.name, err);
@@ -1297,8 +1297,8 @@ function bindEvents(){
   });
   document.getElementById('cmtList').addEventListener('click', async (e)=>{
     if(!e.target.closest('[data-remove-cmt]')) return;
-    await AppDB.remove('commentary:main');
-    CMT_INDEX = null; CMT_MAIN_DATA = null; Object.keys(CMT_CACHE).forEach(k=> delete CMT_CACHE[k]);
+    await AppDB.remove('commentary:mybible');
+    CMT_DB = null; CMT_CHAPTER_RANGES = null; Object.keys(CMT_CACHE).forEach(k=> delete CMT_CACHE[k]);
     await refreshSettingsLists();
   });
   document.getElementById('dictList').addEventListener('click', async (e)=>{
