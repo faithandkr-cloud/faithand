@@ -612,7 +612,18 @@ async function loadTranslation(key){
   if(TRANS_DATA[key]) return TRANS_DATA[key];
   // 1) 설정에서 불러온 IndexedDB 번역본 우선
   try{
-    const rec = await AppDB.load('bible:'+key);
+    let rec = await AppDB.load('bible:'+key);
+    if(!rec){
+      // 유니코드 정규화 차이(맥/아이폰 등에서 온 한글 파일명 NFD)로 키가 어긋난 경우를 대비해
+      // 저장된 모든 번역본을 정규화 후 비교하여 한 번 더 찾아본다.
+      const nk = key.normalize ? key.normalize('NFC') : key;
+      const all = await AppDB.listByPrefix('bible:');
+      const match = all.find(r=>{
+        const rk = r.key.slice('bible:'.length);
+        return (rk.normalize ? rk.normalize('NFC') : rk) === nk;
+      });
+      if(match) rec = match;
+    }
     if(rec && rec.data){
       if(rec.meta?.type === 'mybible'){
         const SQL = await ensureSqlJs();
@@ -1213,7 +1224,11 @@ function renderCompareModeRow(){
   document.getElementById('compareTransSel').style.display = state.compareOn ? '' : 'none';
 }
 function bibleKeyFromFileName(fileName){
-  return fileName.replace(/\.mybible$/i,'').replace(/\.json$/i,'').replace(/_bbl$/i,'');
+  // 맥/아이폰 등에서 온 한글 파일명은 유니코드 정규화 형식(NFD)이 코드에 적힌 문자열(NFC)과
+  // 화면상 같아 보여도 문자열 비교(===)에서는 다르게 취급될 수 있다. 항상 NFC로 통일해서
+  // '개역개정' 같은 내장 번역본 키와 정확히 일치하도록 만든다.
+  const base = fileName.replace(/\.mybible$/i,'').replace(/\.json$/i,'').replace(/_bbl$/i,'');
+  return (base.normalize ? base.normalize('NFC') : base);
 }
 async function handleBibleFiles(fileList){
   for(const file of Array.from(fileList)){
@@ -1266,7 +1281,8 @@ async function handleDictFiles(fileList){
     if(count>=3){ alert('사전은 최대 3개까지 등록할 수 있습니다.'); break; }
     try{
       const isMybible = /\.mybible$/i.test(file.name);
-      const name = file.name.replace(/\.mybible$/i,'').replace(/\.json$/i,'').replace(/_dct$/i,'');
+      let name = file.name.replace(/\.mybible$/i,'').replace(/\.json$/i,'').replace(/_dct$/i,'');
+      if(name.normalize) name = name.normalize('NFC');
       if(isMybible){
         const buf = await file.arrayBuffer(); // .dct.mybible(SQLite) 원본을 바이너리 그대로 저장, 파싱하지 않음
         await AppDB.save('dict:'+name, buf, {fileName:file.name, type:'mybible'});
