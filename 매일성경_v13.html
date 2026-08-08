@@ -46,23 +46,37 @@ header {
   background: linear-gradient(135deg, var(--navy-dk), var(--navy));
   border-bottom: 1px solid rgba(154,123,53,.4);
   padding: 12px 16px;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
   position: sticky; top: 0; z-index: 100;
 }
-.logo { display: flex; align-items: center; gap: 10px; }
+.logo { display: flex; align-items: center; gap: 8px; justify-self: center; }
+.header-left { display: flex; align-items: center; justify-self: start; }
+.header-right { justify-self: end; }
 .logo-cross { font-size: 1.5rem; color: var(--gold-lt); }
 .logo-title { font-size: .95rem; font-weight: 700; color: var(--gold-lt); }
 .logo-sub   { font-size: .68rem; color: var(--txt-dim); margin-top: 1px; }
-.header-right { display: flex; align-items: center; gap: 8px; }
+.header-right { display: flex; align-items: center; gap: 4px; }
+.header-qt-btn {
+  white-space: nowrap; max-width: none;
+  width: 26px; height: 26px; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; font-size: .95rem;
+}
+.header-qt-btn.active {
+  background: rgba(154,123,53,.4);
+  border-color: var(--gold-lt);
+  box-shadow: 0 0 0 1px var(--gold-lt);
+}
 .api-status {
-  display: flex; align-items: center; gap: 5px;
+  display: flex; align-items: center; gap: 4px;
   background: rgba(0,0,0,.25);
   border: 1px solid rgba(154,123,53,.3);
-  border-radius: 20px; padding: 4px 9px;
-  font-size: .68rem; color: var(--txt-dim);
+  border-radius: 20px; padding: 3px 7px;
+  font-size: .62rem; color: var(--txt-dim);
   cursor: pointer; transition: border-color .2s;
+  white-space: nowrap;
 }
 .api-status:hover { border-color: var(--gold); }
 .led {
@@ -93,6 +107,18 @@ header {
   white-space: nowrap; flex-shrink: 0; transition: background .15s;
 }
 #home-btn:hover { background: rgba(154,123,53,.32); }
+.home-fab {
+  position: fixed; right: 18px; bottom: 18px;
+  width: 46px; height: 46px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(20,30,48,.35);
+  border: 1px solid rgba(154,123,53,.4);
+  color: var(--gold-lt); font-size: 1.25rem;
+  cursor: pointer; z-index: 200;
+  backdrop-filter: blur(4px);
+  transition: background .15s, border-color .15s;
+}
+.home-fab:hover { background: rgba(154,123,53,.28); border-color: var(--gold-lt); }
 .date-line {
   display: flex;
   align-items: center;
@@ -122,8 +148,15 @@ header {
 .trans-select option { background: var(--navy-dk); color: var(--cream); }
 
 /* 탭 */
+.tab-nav-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
 .tab-nav {
   display: flex;
+  flex: 1;
+  min-width: 0;
   gap: 0;
   overflow-x: auto;
   -ms-overflow-style: none; scrollbar-width: none;
@@ -133,19 +166,19 @@ header {
   flex: 1;
   padding: 8px 4px;
   border: none;
+  border-radius: 8px;
   background: transparent;
   color: var(--txt-dim);
   font-size: .8rem;
   font-weight: 600;
   cursor: pointer;
-  border-bottom: 2px solid transparent;
   transition: all .2s;
   white-space: nowrap;
 }
 .tab-btn:hover { color: var(--cream); }
 .tab-btn.active {
   color: var(--gold-ltr);
-  border-bottom-color: var(--gold-lt);
+  background: rgba(154,123,53,.25);
 }
 @media (max-width: 400px) {
   .tab-btn { font-size: .7rem; padding: 8px 2px; }
@@ -167,17 +200,36 @@ main { width: 100%; margin: 0; padding: 0; box-sizing: border-box; }
 .card-hd {
   background: linear-gradient(90deg, var(--gold), var(--gold-lt));
   padding: 11px 16px;
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
 }
-.card-hd-left { display: flex; align-items: center; gap: 8px; }
-.card-hd-icon { font-size: 1.1rem; color: var(--navy-dk); }
-.card-hd-title { font-size: .95rem; font-weight: 700; color: var(--navy-dk); }
+.card-hd-left { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; }
+.card-hd-center { flex: 1; min-width: 0; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.card-hd-center-text { flex: 0 1 auto; min-width: 0; max-width: 100%; }
+.card-hd-nav-btn {
+  flex: 0 0 auto;
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(16,29,46,.15);
+  border: none; border-radius: 8px;
+  font-size: 1.3rem; font-weight: 800; line-height: 1;
+  color: var(--navy-dk);
+  cursor: pointer; user-select: none;
+}
+.card-hd-nav-btn:hover { background: rgba(16,29,46,.3); }
+.card-hd-nav-btn:active { background: rgba(16,29,46,.45); }
+.card-hd-date { font-size: .66rem; font-weight: 600; color: rgba(16,29,46,.7); margin-bottom: 2px; white-space: nowrap; }
+.card-hd-addr { display: flex; align-items: center; justify-content: center; gap: 6px; min-width: 0; }
+.card-hd-right { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; }
+.card-hd-icon { font-size: 1.1rem; color: var(--navy-dk); flex-shrink: 0; }
+.card-hd-title { font-size: .95rem; font-weight: 700; color: var(--navy-dk); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .card-hd-badge {
   font-size: .65rem; font-weight: 700;
   background: rgba(16,29,46,.25);
   color: var(--navy-dk);
   padding: 2px 8px; border-radius: 10px;
+  border: none; cursor: pointer; font-family: inherit;
 }
+.card-hd-badge:hover { background: rgba(16,29,46,.4); }
 .card-body { padding: 12px 8px 12px 4px; }
 .verse-book-title {
   font-size: .78rem;
@@ -232,37 +284,36 @@ main { width: 100%; margin: 0; padding: 0; box-sizing: border-box; }
 }
 .kq-a:focus { border-color: var(--gold-lt); }
 
-/* ── AI 해설 카드 ── */
+/* ── AI 해설 카드 (본문 카드와 통일: 갈색 헤더 + 옅은 베이지 바디) ── */
 .ai-card {
-  background: linear-gradient(160deg, var(--navy), var(--navy-lt));
+  background: linear-gradient(160deg, var(--paper), var(--paper-dk));
   border-top: 1px solid rgba(154,123,53,.35);
   overflow: hidden;
 }
 .ai-hd {
   padding: 11px 16px;
-  background: rgba(0,0,0,.2);
+  background: linear-gradient(90deg, var(--gold), var(--gold-lt));
   display: flex; align-items: center; justify-content: space-between;
-  border-bottom: 1px solid rgba(154,123,53,.2);
 }
 .ai-hd-left { display: flex; align-items: center; gap: 8px; }
 .ai-badge {
   font-size: .62rem; font-weight: 700;
   padding: 2px 8px; border-radius: 10px; letter-spacing: .4px;
 }
-.ai-badge.gemini  { background: rgba(66,133,244,.2);  color: #7ab4f5; border: 1px solid rgba(66,133,244,.3); }
-.ai-badge.mistral { background: rgba(255,121,0,.15);  color: #ffaa55; border: 1px solid rgba(255,121,0,.3); }
-.ai-hd-title { font-size: .88rem; color: var(--txt); font-weight: 600; }
+.ai-badge.gemini  { background: rgba(66,133,244,.2);  color: #2f5db8; border: 1px solid rgba(66,133,244,.3); }
+.ai-badge.mistral { background: rgba(255,121,0,.15);  color: #b85e00; border: 1px solid rgba(255,121,0,.3); }
+.ai-hd-title { font-size: .88rem; color: var(--navy-dk); font-weight: 700; }
 .btn-refresh {
-  background: none; border: 1px solid rgba(154,123,53,.3);
+  background: rgba(16,29,46,.12); border: 1px solid rgba(16,29,46,.25);
   border-radius: 6px; padding: 3px 9px;
-  color: var(--txt-dim); font-size: .72rem;
+  color: var(--navy-dk); font-size: .72rem;
   cursor: pointer; transition: all .2s;
 }
-.btn-refresh:hover { border-color: var(--gold); color: var(--gold-lt); }
+.btn-refresh:hover { background: rgba(16,29,46,.25); }
 .ai-body { padding: 18px; }
 .ai-text {
   font-size: .95rem; line-height: 1.9;
-  color: var(--cream); word-break: keep-all;
+  color: var(--ink); word-break: keep-all;
   text-align: left;
 }
 .ai-para {
@@ -272,92 +323,111 @@ main { width: 100%; margin: 0; padding: 0; box-sizing: border-box; }
 .ai-subtitle {
   display: block;
   margin: 18px 0 6px;
-  color: var(--gold-ltr);
+  color: var(--gold-ink);
   font-weight: 700;
   font-size: .92rem;
   letter-spacing: .2px;
 }
 .ai-subtitle:first-child { margin-top: 0; }
 .cache-info {
-  font-size: .65rem; color: var(--txt-dim);
+  font-size: .65rem; color: var(--ink-dim);
   padding: 6px 18px 10px; text-align: right;
-  border-top: 1px solid rgba(154,123,53,.1);
+  border-top: 1px solid rgba(154,123,53,.2);
 }
 
-/* ── 묵상 카드 ── */
+/* ── 묵상 카드: 필사 노트 콘셉트 — 금박 실선으로 세 질문을 잇고, 각 답변란은 줄노트처럼 ── */
 .meditation-card {
-  background: linear-gradient(160deg, var(--navy), var(--navy-lt));
+  background: linear-gradient(160deg, var(--paper), var(--paper-dk));
   border-top: 1px solid rgba(154,123,53,.35);
+  border-radius: 14px;
   overflow: hidden;
+  box-shadow: 0 8px 28px rgba(43,32,19,.14);
 }
 .med-hd {
-  background: linear-gradient(90deg, rgba(154,123,53,.6), rgba(201,168,76,.5));
-  padding: 11px 16px;
-  display: flex; align-items: center; gap: 8px;
+  background: linear-gradient(90deg, var(--gold), var(--gold-lt));
+  padding: 14px 18px;
+  display: flex; align-items: center; gap: 10px;
 }
 .med-hd-icon { font-size: 1.1rem; }
-.med-hd-title { font-size: .95rem; font-weight: 700; color: var(--cream); }
-.med-body { padding: 18px; display: flex; flex-direction: column; gap: 16px; }
-.med-item {}
-.med-q-num {
-  display: inline-block;
-  background: linear-gradient(90deg, var(--gold), var(--gold-lt));
-  color: var(--navy-dk);
-  font-size: .68rem; font-weight: 700;
-  padding: 2px 10px; border-radius: 10px;
-  margin-bottom: 8px; letter-spacing: .3px;
+.med-hd-title { font-size: .95rem; font-weight: 700; color: var(--navy-dk); letter-spacing: .2px; }
+.med-body {
+  padding: 20px 16px 6px 16px;
+  display: flex; flex-direction: column; gap: 24px;
 }
+.med-item {}
+.med-item-body { min-width: 0; }
 .med-q-text {
-  font-size: .9rem; color: var(--gold-ltr);
-  font-weight: 600; margin-bottom: 8px; line-height: 1.5;
+  font-family: Georgia, 'Nanum Myeongjo', 'Batang', serif;
+  font-style: italic;
+  font-size: .95rem; color: var(--gold-ink);
+  font-weight: 700; margin-bottom: 10px; line-height: 1.5;
 }
 .med-textarea {
   width: 100%;
-  background: rgba(0,0,0,.25);
-  border: 1px solid rgba(154,123,53,.25);
-  border-radius: 8px; color: var(--cream);
-  font-size: .9rem; padding: 12px;
+  background-color: rgba(255,255,255,.4);
+  background-image: repeating-linear-gradient(
+    var(--paper) 0, var(--paper) 26px,
+    rgba(154,123,53,.3) 27px
+  );
+  border: 1px solid rgba(154,123,53,.3);
+  border-radius: 8px; color: var(--ink);
+  font-size: .9rem; padding: 10px 12px 0;
   font-family: inherit; resize: none; min-height: 90px;
-  outline: none; line-height: 1.7;
-  transition: border-color .2s;
+  outline: none; line-height: 27px;
+  transition: border-color .2s, box-shadow .2s;
 }
-.med-textarea:focus { border-color: var(--gold-lt); }
-.med-textarea.prayer { min-height: 130px; }
+.med-textarea:focus { border-color: var(--gold-ink); box-shadow: 0 0 0 3px rgba(154,123,53,.15); }
+.med-textarea.prayer { min-height: 135px; }
 .med-example {
-  background: rgba(0,0,0,.18);
-  border: 1px dashed rgba(154,123,53,.35);
-  border-radius: 8px;
-  padding: 10px 12px;
-  margin-bottom: 8px;
+  background: rgba(154,123,53,.08);
+  border: none;
+  border-left: 3px solid var(--gold);
+  border-radius: 0 8px 8px 0;
+  padding: 10px 14px;
+  margin-bottom: 10px;
   font-size: .78rem; line-height: 1.7;
-  color: var(--txt-dim);
+  color: var(--ink-dim);
 }
-.med-example b { color: var(--gold-lt); }
+.med-example b { color: var(--gold-ink); font-family: Georgia, 'Nanum Myeongjo', 'Batang', serif; }
 .med-example .ex-quote {
-  color: var(--txt); font-style: italic;
-  display: block; margin: 4px 0;
+  color: var(--ink); font-style: italic;
+  font-family: Georgia, 'Nanum Myeongjo', 'Batang', serif;
+  display: block; margin: 6px 0;
 }
 .med-footer {
-  padding: 0 18px 18px;
-  display: flex; gap: 10px;
+  padding: 16px 18px 20px;
+  display: flex; gap: 8px;
+  justify-content: center;
 }
 .btn-med-save {
-  flex: 1; padding: 12px;
+  flex: 0 0 auto; width: 88px; padding: 9px 0;
   background: linear-gradient(90deg, var(--gold), var(--gold-lt));
-  border: none; border-radius: 10px;
-  color: var(--navy-dk); font-size: .9rem; font-weight: 700;
-  cursor: pointer; transition: opacity .2s;
+  border: none; border-radius: 999px;
+  color: var(--navy-dk); font-size: .85rem; font-weight: 700;
+  letter-spacing: .3px;
+  cursor: pointer; transition: transform .15s, box-shadow .15s;
+  box-shadow: 0 3px 12px rgba(154,123,53,.4);
 }
-.btn-med-save:hover { opacity: .9; }
-.btn-med-clear {
-  padding: 12px 16px;
-  background: rgba(192,82,74,.1);
-  border: 1px solid rgba(192,82,74,.3);
-  border-radius: 10px;
-  color: var(--red); font-size: .85rem; font-weight: 600;
+.btn-med-save:hover { transform: translateY(-1px); box-shadow: 0 5px 16px rgba(154,123,53,.5); }
+.btn-med-save:active { transform: translateY(0); }
+.btn-med-share {
+  flex: 0 0 auto; width: 88px; padding: 9px 0;
+  background: rgba(74,155,111,.1);
+  border: 1px solid rgba(74,155,111,.35);
+  border-radius: 999px;
+  color: var(--green); font-size: .85rem; font-weight: 600;
   cursor: pointer; transition: all .2s;
 }
-.btn-med-clear:hover { background: rgba(192,82,74,.2); }
+.btn-med-share:hover { background: rgba(74,155,111,.2); }
+.btn-med-clear {
+  flex: 0 0 auto; width: 88px; padding: 9px 0;
+  background: transparent;
+  border: 1px solid rgba(43,32,19,.2);
+  border-radius: 999px;
+  color: var(--ink-dim); font-size: .85rem; font-weight: 600;
+  cursor: pointer; transition: all .2s;
+}
+.btn-med-clear:hover { background: rgba(43,32,19,.07); border-color: rgba(43,32,19,.35); }
 
 /* ── 달력 ── */
 .cal-card {
@@ -618,12 +688,16 @@ main { width: 100%; margin: 0; padding: 0; box-sizing: border-box; }
   user-select: none;
 }
 .font-ctrl:hover { background: rgba(16,29,46,.3); }
+.font-ctrl-group { display: inline-flex; align-items: center; gap: 6px; }
 </style>
 </head>
 <body>
 
 <!-- 헤더 -->
 <header>
+  <div class="header-left">
+    <button class="btn-settings" onclick="openSettings('ai')">☰</button>
+  </div>
   <div class="logo">
     <span class="logo-cross">✝</span>
     <div>
@@ -636,31 +710,20 @@ main { width: 100%; margin: 0; padding: 0; box-sizing: border-box; }
       <div class="led" id="led"></div>
       <span id="led-label">미설정</span>
     </div>
-    <button class="btn-settings" onclick="openSettings('ai')">⚙️</button>
   </div>
 </header>
 
-<!-- 날짜 + 번역본 + 큐티책 + 탭 -->
+<!-- 번역본 + 큐티책 + 탭 -->
 <div class="datebar-wrap">
-  <div class="date-line">
-    <button id="home-btn" onclick="goHome()">← 홈</button>
-    <div class="date-text" id="dateText">날짜 로딩 중...</div>
-    <div class="select-group">
-      <select class="trans-select" id="qtSelect" onchange="onQTChange()">
-        <option value="매일성경">📘 매일성경</option>
-        <option value="생명의삶">📗 생명의 삶</option>
-      </select>
-      <select class="trans-select" id="transSelect" onchange="onTransChange()">
-        <option value="">번역본 선택</option>
-      </select>
+  <div class="tab-nav-row">
+    <div class="tab-nav">
+      <button class="tab-btn active" id="tabBtnVerse"     onclick="switchTab('verse')">📖 본문</button>
+      <button class="tab-btn"        id="tabBtnComm"      onclick="switchTab('comm')">💡 해설</button>
+      <button class="tab-btn"        id="tabBtnExeg"      onclick="switchTab('exeg')">🔎 해석</button>
+      <button class="tab-btn"        id="tabBtnMed"       onclick="switchTab('med')">✍️ 묵상</button>
     </div>
-  </div>
-  <div class="tab-nav">
-    <button class="tab-btn active" id="tabBtnVerse"     onclick="switchTab('verse')">📖 본문</button>
-    <button class="tab-btn"        id="tabBtnComm"      onclick="switchTab('comm')">💡 해설</button>
-    <button class="tab-btn"        id="tabBtnExeg"      onclick="switchTab('exeg')">🔎 해석</button>
-    <button class="tab-btn"        id="tabBtnMed"       onclick="switchTab('med')">✍️ 묵상</button>
-    <button class="tab-btn"        id="tabBtnCal"       onclick="switchTab('cal')">🗓️ 달력</button>
+    <button class="trans-select header-qt-btn" id="tabBtnCal" onclick="switchTab('cal')" title="달력">🗓️</button>
+    <button class="trans-select header-qt-btn" id="qtToggleBtn" onclick="toggleQT()" title="매일성경 (탭하여 전환)">📘</button>
   </div>
 </div>
 
@@ -696,6 +759,7 @@ main { width: 100%; margin: 0; padding: 0; box-sizing: border-box; }
 
 <!-- 저장 토스트 -->
 <div class="save-toast" id="saveToast">✓ 저장되었습니다</div>
+<button class="home-fab" onclick="goHome()" title="홈으로">🏠</button>
 
 <!-- 설정 모달 -->
 <div class="modal-bg" id="modalBg" onclick="onBgClick(event)">
@@ -938,14 +1002,35 @@ function getMistralModel(){ return LS.get('chat_mis_model', 'mistral-small-lates
 function getSelectedAI()  { return LS.get('selectedAI', 'gemini'); }
 
 // ── 날짜 유틸 ──
+// viewDate: 현재 화면에 표시 중인 날짜(기본값 = 실제 오늘). 헤더의 ‹ › 버튼으로 이동한다.
+let viewDate = new Date();
+
 function getTodayKey() {
-  const d = new Date();
+  const d = viewDate;
   return String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
 function getTodayLabel() {
-  const d = new Date();
+  const d = viewDate;
   const days = ['일','월','화','수','목','금','토'];
   return `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
+}
+// 달력의 '오늘' 표시 등, viewDate와 무관하게 실제 오늘 날짜가 필요한 곳에서 사용
+function getActualTodayKey() {
+  const d = new Date();
+  return String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+// 헤더의 ‹ › 버튼: offset일만큼 이동 후 현재 탭을 다시 렌더링
+function changeViewDate(offset) {
+  viewDate = new Date(viewDate);
+  viewDate.setDate(viewDate.getDate() + offset);
+  refreshCurrentPanel();
+}
+function refreshCurrentPanel() {
+  if (currentTab === 'verse') renderVersePanel();
+  if (currentTab === 'comm')  renderCommPanel();
+  if (currentTab === 'exeg')  renderExegesisPanel();
+  if (currentTab === 'med')   renderMedPanel();
+  if (currentTab === 'cal')   renderCalendarPanel();
 }
 
 // ── 홈으로 이동 ──
@@ -978,9 +1063,28 @@ function checkLifeData() {
   alert(msg);
 }
 
-function onQTChange() {
-  const qt = document.getElementById('qtSelect').value;
+const QT_LIST = [
+  { id:'매일성경', icon:'📘', label:'매일성경' },
+  { id:'생명의삶', icon:'📗', label:'생명의 삶' },
+];
+
+function updateQTButtonLabel() {
+  const btn = document.getElementById('qtToggleBtn');
+  if (!btn) return;
+  const cur = QT_LIST.find(q => q.id === getActiveQT()) || QT_LIST[0];
+  btn.textContent = cur.icon;
+  btn.title = cur.label + ' (탭하여 전환)';
+}
+
+function toggleQT() {
+  const idx = QT_LIST.findIndex(q => q.id === getActiveQT());
+  const next = QT_LIST[(idx + 1) % QT_LIST.length].id;
+  applyQTChange(next);
+}
+
+function applyQTChange(qt) {
   setActiveQT(qt);
+  updateQTButtonLabel();
   /* 전환 시 화면에 표시된 패널 내용 즉시 초기화 (캐시 잔재 방지) */
   const commEl = document.getElementById('aiText');
   if (commEl) commEl.innerHTML = '<div class="loading-wrap"><div class="spinner"></div><span>전환 중...</span></div>';
@@ -996,6 +1100,7 @@ function onQTChange() {
     if (currentTab === 'med')  renderMedPanel();
   }, 50);
 }
+
 
 // ── 큐티책 전환 후: 본문/질문/해설을 현재 큐티책 주소 기준으로 새로 생성 ──
 // (큐티책을 바꾸면 성경본문 "주소"만 바뀌고, 실제 본문/핵심질문/오늘의 해설은
@@ -1135,8 +1240,7 @@ function onLifeJsonFileChange(event) {
     else showToast(`✓ ${newCount}일 불러옴 — 성경 파일 로드 필요`);
 
     setActiveQT('생명의삶');
-    const qtSel = document.getElementById('qtSelect');
-    if (qtSel) qtSel.value = '생명의삶';
+    updateQTButtonLabel();
 
     renderVersePanel();
   };
@@ -1195,8 +1299,7 @@ function saveLifeSettings() {
   else showToast(`✓ ${newCount}일 저장됨 — 성경 파일 로드 필요`);
 
   setActiveQT('생명의삶');
-  const qtSel = document.getElementById('qtSelect');
-  if (qtSel) qtSel.value = '생명의삶';
+  updateQTButtonLabel();
 
   closeSettings();
   renderVersePanel();
@@ -1289,27 +1392,32 @@ function addSavedVersionId(id) {
 function getActiveVersion() { return LS.get('activeVersion', ''); }
 function setActiveVersion(id) { LS.set('activeVersion', id); }
 
-// ── 번역본 드롭다운 구성 ──
+// ── 번역본 버튼 갱신 ──
 function buildTransSelect() {
-  const sel = document.getElementById('transSelect');
+  const btn = document.getElementById('transToggleBtn');
+  if (!btn) return;
   const saved = getSavedVersionIds();
-  sel.innerHTML = '<option value="">번역본 선택</option>';
-  saved.forEach(id => {
-    const ver = VERSIONS.find(v => v.id === id);
-    const label = ver ? ver.icon + ' ' + ver.label : id;
-    const opt = document.createElement('option');
-    opt.value = id; opt.textContent = label;
-    sel.appendChild(opt);
-  });
   const active = getActiveVersion();
-  if (active && saved.includes(active)) sel.value = active;
+  if (active && saved.includes(active)) {
+    const ver = VERSIONS.find(v => v.id === active);
+    btn.textContent = ver ? ver.icon + ' ' + ver.label : active;
+  } else {
+    btn.textContent = '번역본 선택';
+  }
 }
 
-function onTransChange() {
-  const id = document.getElementById('transSelect').value;
-  setActiveVersion(id);
+function toggleTrans() {
+  const saved = getSavedVersionIds();
+  if (!saved.length) { showToast('먼저 설정 > 성경 데이터에서 번역본을 불러와주세요'); return; }
+  const ordered = VERSIONS.filter(v => saved.includes(v.id)).map(v => v.id);
+  if (!ordered.length) { showToast('먼저 설정 > 성경 데이터에서 번역본을 불러와주세요'); return; }
+  const idx = ordered.indexOf(getActiveVersion());
+  const next = ordered[(idx + 1) % ordered.length];
+  setActiveVersion(next);
+  buildTransSelect();
   renderVersePanel();
 }
+
 
 // ── 구절 추출 ──
 function extractVerses(title, db) {
@@ -1456,6 +1564,7 @@ function formatVerseText(text) {
 
 // ── 폰트 크기 조절 ──
 let _verseFontSize = parseInt(localStorage.getItem('verseFontSize') || '15');
+let fontControlsOpen = false;
 function adjVerseFont(delta) {
   _verseFontSize = Math.min(24, Math.max(11, _verseFontSize + delta));
   localStorage.setItem('verseFontSize', _verseFontSize);
@@ -1464,6 +1573,11 @@ function adjVerseFont(delta) {
 function applyVerseFont() {
   const el = document.getElementById('verseTextEl');
   if (el) el.style.fontSize = _verseFontSize + 'px';
+}
+function toggleFontControls() {
+  fontControlsOpen = !fontControlsOpen;
+  const grp = document.getElementById('fontCtrlGroup');
+  if (grp) grp.style.display = fontControlsOpen ? 'inline-flex' : 'none';
 }
 
 // ── 탭 전환 ──
@@ -1489,10 +1603,8 @@ function setLED(state, label) {
 
 // ── 초기화 ──
 window.onload = async () => {
-  document.getElementById('dateText').textContent = getTodayLabel();
-  // 큐티책 드롭다운 초기값
-  const qtSel = document.getElementById('qtSelect');
-  if (qtSel) qtSel.value = getActiveQT();
+  // 큐티책 버튼 초기값
+  updateQTButtonLabel();
   // 대문(메인화면)에서 등록한 성경 데이터 동기화 (IndexedDB 공유)
   await syncBibleFromSharedDB();
   buildTransSelect();
@@ -1561,7 +1673,8 @@ function renderVersePanel() {
 
   const verseText  = getVerseText(dateKey);
   const verId      = getActiveVersion();
-  const verLabel   = VERSIONS.find(v=>v.id===verId)?.label || verId;
+  const verVer     = VERSIONS.find(v=>v.id===verId);
+  const verLabel   = verVer ? (verVer.icon + ' ' + verVer.label) : verId;
 
   // 핵심질문 + 소제목 캐시 확인 (큐티책별 구분)
   const qt          = getActiveQT();
@@ -1582,15 +1695,26 @@ function renderVersePanel() {
   container.innerHTML = `
     <div class="verse-card">
       <div class="card-hd">
-        <div class="card-hd-left">
-          <span class="card-hd-icon">📖</span>
-          <span class="card-hd-title">${addrPart}</span>
+        <div class="card-hd-left" id="cardHdLeft">
+          <button class="card-hd-badge" id="transToggleBtn" onclick="toggleTrans()">${verId ? verLabel : '번역본 선택'}</button>
         </div>
-        <div style="display:flex;align-items:center;gap:6px;">
-          ${verId ? `<span class="card-hd-badge">${verLabel}</span>` : ''}
+        <div class="card-hd-center">
+          <button class="card-hd-nav-btn" onclick="changeViewDate(-1)" title="어제 본문">‹</button>
+          <div class="card-hd-center-text">
+            <div class="card-hd-date">${getTodayLabel()}</div>
+            <div class="card-hd-addr">
+              <span class="card-hd-title">${addrPart}</span>
+            </div>
+          </div>
+          <button class="card-hd-nav-btn" onclick="changeViewDate(1)" title="내일 본문">›</button>
+        </div>
+        <div class="card-hd-right" id="cardHdRight">
           <span class="font-ctrl" title="현재 큐티책 기준으로 본문·질문·해설을 새로 생성합니다" onclick="regenerateContentForQT()">↺</span>
-          <span class="font-ctrl" title="본문 글자 크게" onclick="adjVerseFont(1)">A+</span>
-          <span class="font-ctrl" title="본문 글자 작게" onclick="adjVerseFont(-1)">A-</span>
+          <span class="font-ctrl" title="글자 크기 조절" onclick="toggleFontControls()">Aa</span>
+          <span class="font-ctrl-group" id="fontCtrlGroup" style="display:${fontControlsOpen ? 'inline-flex' : 'none'};">
+            <span class="font-ctrl" title="본문 글자 크게" onclick="adjVerseFont(1)">A+</span>
+            <span class="font-ctrl" title="본문 글자 작게" onclick="adjVerseFont(-1)">A-</span>
+          </span>
         </div>
       </div>
       <div class="card-body">
@@ -1943,17 +2067,18 @@ function renderMedPanel() {
       <div class="med-body">
         ${MED_QUESTIONS.map(mq => `
           <div class="med-item">
-            <div class="med-q-num">질문 ${mq.label}</div>
-            <div class="med-q-text">${mq.q}</div>
-            ${mq.example ? `<div class="med-example">${mq.example}</div>` : ''}
-            <textarea class="med-textarea ${mq.cls}" id="medAns_${mq.key}"
-              placeholder="${mq.ph}"
-              oninput="autoResize(this)">${LS.get(medKey+'_'+mq.key, '')}</textarea>
+            <div class="med-item-body">
+              <div class="med-q-text">${mq.q}</div>
+              ${mq.example ? `<div class="med-example">${mq.example}</div>` : ''}
+              <textarea class="med-textarea ${mq.cls}" id="medAns_${mq.key}"
+                placeholder="${mq.ph}"
+                oninput="autoResize(this)">${LS.get(medKey+'_'+mq.key, '')}</textarea>
+            </div>
           </div>`).join('')}
       </div>
       <div class="med-footer">
-        <button class="btn-med-save" onclick="saveMeditation()">💾 묵상 저장</button>
-        <button class="btn-med-clear" onclick="shareMeditation()" style="color:#4caf50;border-color:rgba(76,175,80,.4);">📤 공유하기</button>
+        <button class="btn-med-save" onclick="saveMeditation()">💾 저장</button>
+        <button class="btn-med-share" onclick="shareMeditation()">📤 공유</button>
         <button class="btn-med-clear" onclick="clearMeditation()">초기화</button>
       </div>
     </div>`;
@@ -2031,7 +2156,7 @@ function renderCalendarPanel() {
   const year = new Date().getFullYear(); // 표시용(데이터 자체엔 연도 없음)
   const firstDow = new Date(year, calMonth-1, 1).getDay(); // 0=일
   const daysInMonth = new Date(year, calMonth, 0).getDate();
-  const todayKey = getTodayKey();
+  const todayKey = getActualTodayKey();
   const weekdays = ['일','월','화','수','목','금','토'];
 
   let cells = '';
@@ -2204,8 +2329,7 @@ function openSettings(tab='ai') {
 
   // 큐티탭 초기화
   switchQTTab('매일성경');
-  const qtSel = document.getElementById('qtSelect');
-  if (qtSel) qtSel.value = getActiveQT();
+  updateQTButtonLabel();
 
   buildVersionsList();
   document.getElementById('geminiTestResult').textContent  = '';
