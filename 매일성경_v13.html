@@ -60,9 +60,9 @@ header {
 .header-right { display: flex; align-items: center; gap: 4px; }
 .header-qt-btn {
   white-space: nowrap; max-width: none;
-  width: 26px; height: 26px; padding: 0;
+  width: 30px; height: 30px; padding: 0;
   display: flex; align-items: center; justify-content: center;
-  border-radius: 50%; font-size: .95rem;
+  border-radius: 50%; font-size: 1.2rem;
 }
 .header-qt-btn.active {
   background: rgba(154,123,53,.4);
@@ -169,7 +169,7 @@ header {
   border-radius: 8px;
   background: transparent;
   color: var(--txt-dim);
-  font-size: .8rem;
+  font-size: .95rem;
   font-weight: 600;
   cursor: pointer;
   transition: all .2s;
@@ -181,7 +181,7 @@ header {
   background: rgba(154,123,53,.25);
 }
 @media (max-width: 400px) {
-  .tab-btn { font-size: .7rem; padding: 8px 2px; }
+  .tab-btn { font-size: .82rem; padding: 8px 2px; }
 }
 
 /* ── 메인 ── */
@@ -199,7 +199,8 @@ main { width: 100%; margin: 0; padding: 0; box-sizing: border-box; }
 }
 .card-hd {
   background: linear-gradient(90deg, var(--gold), var(--gold-lt));
-  padding: 11px 16px;
+  padding: 6px 16px;
+  min-height: 46px;
   display: flex; align-items: center; justify-content: space-between; gap: 6px;
 }
 .card-hd-left { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; }
@@ -291,7 +292,8 @@ main { width: 100%; margin: 0; padding: 0; box-sizing: border-box; }
   overflow: hidden;
 }
 .ai-hd {
-  padding: 11px 16px;
+  padding: 6px 16px;
+  min-height: 46px;
   background: linear-gradient(90deg, var(--gold), var(--gold-lt));
   display: flex; align-items: center; justify-content: space-between;
 }
@@ -339,13 +341,12 @@ main { width: 100%; margin: 0; padding: 0; box-sizing: border-box; }
 .meditation-card {
   background: linear-gradient(160deg, var(--paper), var(--paper-dk));
   border-top: 1px solid rgba(154,123,53,.35);
-  border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 8px 28px rgba(43,32,19,.14);
 }
 .med-hd {
   background: linear-gradient(90deg, var(--gold), var(--gold-lt));
-  padding: 14px 18px;
+  padding: 6px 18px;
+  min-height: 46px;
   display: flex; align-items: center; gap: 10px;
 }
 .med-hd-icon { font-size: 1.1rem; }
