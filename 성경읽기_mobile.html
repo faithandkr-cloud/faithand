@@ -1098,11 +1098,18 @@ function renderCompareModeRow(){
   });
   document.getElementById('compareTransSel').style.display = state.compareOn ? '' : 'none';
 }
+function stripMyswordExt(filename){
+  // 플랫폼(특히 안드로이드 브라우저)마다 file.name에서 .bbl.mybible / .mybible 같은
+  // 이중 확장자가 정규식에 다르게 매칭되는 문제가 있어, 대신 "첫 번째 마침표 앞부분"만
+  // 이름으로 사용한다. 한글 성경/사전 파일명에는 마침표가 없으므로 안전하다.
+  const i = filename.indexOf('.');
+  return i === -1 ? filename : filename.slice(0, i);
+}
 async function handleBibleFiles(fileList){
   for(const file of Array.from(fileList)){
     try{
       const buf = await file.arrayBuffer(); // .bbl.mybible(SQLite) 원본을 바이너리 그대로
-      const name = file.name.replace(/\.bbl\.mybible$/i,'').replace(/\.mybible$/i,'');
+      const name = stripMyswordExt(file.name);
       await AppDB.save('bible:'+name, buf, {fileName:file.name});
       delete BIBLE_DBS[name]; // 캐시 초기화
       Object.keys(BIBLE_CHAPTER_CACHE).forEach(k=>{ if(k.indexOf(name+'_')===0) delete BIBLE_CHAPTER_CACHE[k]; });
@@ -1142,7 +1149,7 @@ async function handleDictFiles(fileList){
     if(count>=3){ alert('사전은 최대 3개까지 등록할 수 있습니다.'); break; }
     try{
       const buf = await file.arrayBuffer(); // .dct.mybible(SQLite) 원본을 바이너리 그대로
-      const name = file.name.replace(/\.dct\.mybible$/i,'').replace(/\.mybible$/i,'');
+      const name = stripMyswordExt(file.name);
       await AppDB.save('dict:'+name, buf, {fileName:file.name});
       count++;
     }catch(err){
