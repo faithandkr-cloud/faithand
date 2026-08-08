@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
+<script src="./sql-wasm.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>성경읽기</title>
@@ -591,10 +591,12 @@ function loadState(){
    - dictionary(word, data) — word 인덱스
    - commentary(book, chapter, fromverse, toverse, data) — (book,chapter,fromverse) 인덱스
 */
-let SQLJS = null; // sql.js 모듈(initSqlJs 결과), 세션당 한 번만 초기화
+let SQLJS = null;         // sql.js 모듈(initSqlJs 결과), 세션당 한 번만 초기화
+let SQLJS_PROMISE = null; // 초기화 진행 중인 Promise (여러 곳에서 동시에 불러도 중복 초기화 방지)
 async function ensureSqlJs(){
   if(SQLJS) return SQLJS;
-  SQLJS = await initSqlJs({ locateFile: f => 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/'+f });
+  if(!SQLJS_PROMISE) SQLJS_PROMISE = initSqlJs({ locateFile: f => './'+f }); // 같은 폴더의 sql-wasm.wasm
+  SQLJS = await SQLJS_PROMISE;
   return SQLJS;
 }
 
@@ -1364,6 +1366,7 @@ function bindEvents(){
 
 /* ===================== 초기화 ===================== */
 async function init(){
+  ensureSqlJs(); // 백그라운드로 미리 시작 (await 안 함) — 아래 작업들과 병렬 진행
   loadState();
   await fillTransSelects();
   applyFontChoice();
