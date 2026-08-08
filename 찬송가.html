@@ -325,7 +325,7 @@ function switchTab(tab){
       jumpSel.style.display='none'; findBtn.style.display='';
       fontBtn.style.display='none'; closeFontPop();
     } else {
-      jumpSel.style.display=''; findBtn.style.display='none';
+      jumpSel.style.display='none'; findBtn.style.display='';
       fontBtn.style.display='';
       populateJumpSelect(tab);
     }
@@ -505,7 +505,14 @@ Object.keys(HYMN_CATS).forEach(major=>{
   });
 });
 
+const READING_FLAT = [];
+(WORSHIP_DATA['교독문']||[]).forEach(entry=>{
+  READING_FLAT.push({n:entry.number, t:entry.title});
+});
+
+let finderMode = 'hymn';
 function openHymnFinder(){
+  finderMode = (currentTab==='reading') ? 'reading' : 'hymn';
   const app = document.getElementById('app');
   const sub = document.getElementById('subheader');
   const panel = document.getElementById('hymnFinderPanel');
@@ -513,8 +520,10 @@ function openHymnFinder(){
   const subRect = sub.getBoundingClientRect();
   panel.style.top = Math.round(subRect.bottom - appRect.top + 8) + 'px';
   document.getElementById('hymnFinder').classList.add('open');
-  document.getElementById('hymnFinderSearch').value = '';
-  renderHymnCategoryTree();
+  const searchBox = document.getElementById('hymnFinderSearch');
+  searchBox.value = '';
+  searchBox.placeholder = finderMode==='reading' ? '교독문 번호 또는 제목으로 검색' : '찬송가 제목으로 검색';
+  if(finderMode==='reading') renderReadingList(); else renderHymnCategoryTree();
 }
 function closeHymnFinder(){
   document.getElementById('hymnFinder').classList.remove('open');
@@ -549,6 +558,13 @@ function renderHymnCategoryTree(){
   document.getElementById('hymnFinderList').innerHTML = html;
 }
 
+function renderReadingList(){
+  const html = READING_FLAT.map(r=>
+    '<div class="hf-song" onclick="pickReading('+r.n+')"><span class="num">'+r.n+'</span>'+escapeHtml(r.t)+'</div>'
+  ).join('');
+  document.getElementById('hymnFinderList').innerHTML = html;
+}
+
 function toggleHfGroup(id){
   document.getElementById('grp-'+id).classList.toggle('open');
   document.getElementById('caret-'+id).classList.toggle('open');
@@ -556,10 +572,23 @@ function toggleHfGroup(id){
 
 function hymnFinderSearchInput(q){
   q = q.trim();
+  const list = document.getElementById('hymnFinderList');
+  if(finderMode==='reading'){
+    if(!q){ renderReadingList(); return; }
+    const isNum = /^\d+$/.test(q);
+    const results = READING_FLAT.filter(r => isNum ? String(r.n).includes(q) : r.t.includes(q));
+    if(!results.length){
+      list.innerHTML = '<div class="empty-note">검색 결과가 없습니다.</div>';
+      return;
+    }
+    list.innerHTML = results.map(r=>
+      '<div class="hf-song" onclick="pickReading('+r.n+')"><span class="num">'+r.n+'</span>'+escapeHtml(r.t)+'</div>'
+    ).join('');
+    return;
+  }
   if(!q){ renderHymnCategoryTree(); return; }
   const isNum = /^\d+$/.test(q);
   const results = HYMN_FLAT.filter(s => isNum ? String(s.n).includes(q) : s.t.includes(q));
-  const list = document.getElementById('hymnFinderList');
   if(!results.length){
     list.innerHTML = '<div class="empty-note">검색 결과가 없습니다.</div>';
     return;
@@ -573,6 +602,10 @@ function hymnFinderSearchInput(q){
 function pickHymn(n){
   closeHymnFinder();
   showHymn(n);
+}
+function pickReading(n){
+  closeHymnFinder();
+  renderReading(n);
 }
 const IDB_NAME='hymnDB', IDB_STORE='images';
 function idbOpen(){
